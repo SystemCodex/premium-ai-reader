@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Reader Premium</title>
+    <title>AI Reader Pro - Lectura Confortable</title>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -14,31 +14,38 @@
 <body>
     <div class="app-container">
         <header>
-            <h1>AI Reader Premium</h1>
+            <div class="header-left">
+                <h1>AI Reader Pro</h1>
+                <div id="quota-info" class="quota-badge" style="display: none;">
+                    📖 Caracteres: <span id="char-count">0</span>
+                </div>
+            </div>
             
             <div class="top-controls">
                 <div class="voice-control-group">
                     <select id="voice-select" class="voice-select">
                         <option value="" disabled selected>Cargando voces...</option>
                     </select>
-                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escuchar voz (Gratis)">🔊</button>
+                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escuchar voz">🔊</button>
                 </div>
 
                 <input type="file" id="pdf-upload" accept=".pdf" hidden>
-                <button onclick="document.getElementById('pdf-upload').click()" class="btn-primary">📂 Subir PDF</button>
-                <button id="theme-toggle" class="btn-icon" style="display:none;">🌙</button>
+                <button onclick="document.getElementById('pdf-upload').click()" class="btn-primary">📂 Abrir PDF</button>
             </div>
         </header>
 
+        <canvas id="audio-visualizer"></canvas>
+
         <main id="viewer">
             <div id="text-content" class="placeholder-text">
-                Sube un archivo PDF para comenzar la experiencia de lectura...
+                <p>Bienvenido al modo de lectura confortable.</p>
+                <p class="sub-text">Sube un PDF para comenzar. Tu progreso se guardará automáticamente.</p>
             </div>
         </main>
 
         <footer class="player-bar">
             <div class="progress-info">
-                BLOQUE: <span id="current-index">0</span> / <span id="total-sentences">0</span>
+                BLOQUE <span id="current-index">0</span> / <span id="total-sentences">0</span>
             </div>
             
             <div class="main-buttons">
@@ -48,6 +55,10 @@
             </div>
             
             <div class="settings">
+                <button id="btn-download-all" class="btn-download-all" style="display: none;">
+                    ⬇️ MP3 COMPLETO
+                </button>
+                
                 <select id="speed-select">
                     <option value="1">1.0x</option>
                     <option value="1.25">1.25x</option>
