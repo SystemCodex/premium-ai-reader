@@ -1,36 +1,47 @@
-/* VARIABLES */
+/* IMPORTAR FUENTE MODERNA (Montserrat) */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
+
+/* =========================================
+   1. VARIABLES FUTURISTAS & COLORES
+   ========================================= */
 :root {
-    --bg-app: #f8f9fa;
-    --bg-panel: #ffffff;
-    --text-main: #1f2937;
-    --text-muted: #6b7280;
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --highlight-bg: #e0e7ff;
-    --highlight-text: #3730a3;
-    --border: #e5e7eb;
+    /* Fondo Gradiente Principal (Inspirado en la referencia) */
+    --bg-gradient: linear-gradient(135deg, #1a0b2e 0%, #391356 50%, #0f255c 100%);
+    
+    /* Efecto Vidrio (Glassmorphism) */
+    --glass-bg: rgba(255, 255, 255, 0.08); /* Fondo translúcido */
+    --glass-border: rgba(255, 255, 255, 0.15); /* Borde sutil */
+    --glass-blur: blur(12px); /* Desenfoque del fondo */
+    
+    /* Textos */
+    --text-white: #ffffff;
+    --text-muted-light: #b3b3b3;
+    
+    /* Acentos de Neón */
+    --neon-cyan: #00e5ff;
+    --neon-pink: #ff00a8;
+    --neon-glow-shadow: 0 0 15px rgba(0, 229, 255, 0.4); /* Resplandor cian */
+    
+    /* Gradiente para botón principal */
+    --primary-btn-grad: linear-gradient(90deg, var(--neon-cyan), #0072ff);
 }
 
-body.dark-mode {
-    --bg-app: #111827;
-    --bg-panel: #1f2937;
-    --text-main: #f3f4f6;
-    --text-muted: #9ca3af;
-    --primary: #818cf8;
-    --primary-hover: #6366f1;
-    --highlight-bg: #312e81;
-    --highlight-text: #e0e7ff;
-    --border: #374151;
-}
+/* El modo oscuro ya no es necesario porque el diseño base ES oscuro. 
+   Podemos eliminar el bloque body.dark-mode por ahora. */
 
+/* =========================================
+   2. ESTRUCTURA BASE
+   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; width: 100%; }
 
 body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: var(--bg-app);
-    color: var(--text-main);
-    overflow: hidden; /* IMPORTANTE: Evita scroll en el cuerpo, solo en el viewer */
+    /* Usamos la nueva fuente y el fondo gradiente */
+    font-family: 'Montserrat', sans-serif;
+    background: var(--bg-gradient); /* Fondo futurista */
+    background-attachment: fixed; /* El fondo se queda fijo al hacer scroll */
+    color: var(--text-white); /* Texto blanco */
+    overflow: hidden;
 }
 
 .app-container {
@@ -39,80 +50,174 @@ body {
     height: 100vh;
 }
 
-/* HEADER */
+/* =========================================
+   3. ENCABEZADO (HEADER) - EFECTO VIDRIO
+   ========================================= */
 header {
-    background: var(--bg-panel);
-    padding: 0.8rem 2rem;
+    /* Fondo translúcido + Desenfoque */
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur); /* Para Safari */
+    
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2); /* Sombra suave */
+    z-index: 10;
 }
 
-.top-controls { display: flex; gap: 10px; align-items: center; }
+header h1 {
+    font-weight: 800;
+    text-transform: uppercase; /* Mayúsculas */
+    letter-spacing: 2px; /* Espaciado entre letras */
+    /* Pequeño resplandor en el texto */
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.3); 
+    font-size: 1.4rem;
+}
 
-/* Selector de Voz */
+.top-controls { display: flex; gap: 12px; align-items: center; }
+
+/* =========================================
+   4. SELECTORES Y BOTONES FUTURISTAS
+   ========================================= */
+
+/* Grupo del selector de voz */
 .voice-control-group {
     display: flex;
     align-items: center;
     gap: 5px;
-    background: rgba(0,0,0,0.05);
-    padding: 4px 8px;
-    border-radius: 8px;
+    /* Fondo de vidrio */
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 6px 10px;
+    border-radius: 30px; /* Bordes muy redondeados */
     margin-right: 10px;
-    border: 1px solid var(--border);
+    backdrop-filter: blur(5px);
 }
+
+/* El selector (dropdown) */
 .voice-select {
     border: none;
     background: transparent;
-    color: var(--text-main);
-    max-width: 150px;
+    color: var(--text-white);
+    font-family: inherit;
+    font-weight: 600;
+    max-width: 160px;
     outline: none;
+    cursor: pointer;
 }
 
-/* BOTONES */
-button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; transition: 0.2s; }
-.btn-primary { background: var(--primary); color: white; padding: 8px 16px; }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-icon { background: transparent; font-size: 1.2rem; padding: 5px; }
+/* Opciones del selector (Para que se vean oscuras al abrirlo) */
+.voice-select option {
+    background-color: #1a0b2e; /* Color oscuro sólido */
+    color: white;
+}
 
-/* VISUALIZADOR (SCROLL) */
+/* Botones Generales */
+button {
+    cursor: pointer;
+    border-radius: 30px; /* Botones estilo cápsula */
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+/* Botón "Subir PDF" */
+.btn-primary {
+    background: rgba(255, 255, 255, 0.1); /* Semi-transparente */
+    color: var(--text-white);
+    padding: 8px 20px;
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(5px);
+}
+.btn-primary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); /* Resplandor blanco */
+}
+
+/* Botones Icono (Bocina, Luna) */
+.btn-icon {
+    background: transparent;
+    color: var(--text-white);
+    font-size: 1.3rem;
+    padding: 6px;
+    border: 1px solid transparent;
+}
+.btn-icon:hover {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+/* =========================================
+   5. ZONA DE LECTURA (VIEWER)
+   ========================================= */
 #viewer {
     flex: 1;
-    overflow-y: auto; /* SCROLL SOLO AQUÍ */
-    padding: 2rem;
+    overflow-y: auto;
+    padding: 3rem 2rem;
     width: 100%;
     scroll-behavior: smooth;
 }
 
 #text-content {
-    max-width: 800px;
+    max-width: 850px;
     margin: 0 auto;
-    font-size: 1.1rem;
-    line-height: 1.8;
+    font-size: 1.15rem;
+    line-height: 1.9;
+    letter-spacing: 0.5px;
 }
 
+.placeholder-text {
+    color: var(--text-muted-light);
+    text-align: center;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* Bloques de texto */
 .sentence {
-    display: block; /* Bloques separados */
+    display: block;
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    border-radius: 8px;
+    padding: 1.2rem;
+    border-radius: 12px;
     cursor: pointer;
+    /* Borde transparente por defecto para que no salte al activarse */
     border: 1px solid transparent;
-}
-.sentence:hover { background-color: rgba(0,0,0,0.05); border-color: var(--border); }
-.sentence.active {
-    background-color: var(--highlight-bg);
-    color: var(--highlight-text);
-    border-left: 5px solid var(--primary);
-    font-weight: 500;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02); /* Fondo muy sutil */
 }
 
-/* FOOTER */
+.sentence:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--glass-border);
+}
+
+/* BLOQUE ACTIVO (LEYENDO) - EFECTO NEÓN */
+.sentence.active {
+    /* Fondo cian translúcido */
+    background-color: rgba(0, 229, 255, 0.1); 
+    color: var(--text-white);
+    /* Borde izquierdo brillante */
+    border-left: 4px solid var(--neon-cyan); 
+    /* Resplandor alrededor de la caja */
+    box-shadow: var(--neon-glow-shadow), inset 0 0 10px rgba(0, 229, 255, 0.1);
+    font-weight: 600;
+}
+
+/* =========================================
+   6. BARRA DE REPRODUCCIÓN (FOOTER)
+   ========================================= */
 .player-bar {
-    background: var(--bg-panel);
-    border-top: 1px solid var(--border);
+    /* Efecto vidrio igual que el header */
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--glass-border);
+    
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
@@ -121,17 +226,73 @@ button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; tr
     z-index: 10;
 }
 
-.btn-control { background: transparent; font-size: 1.5rem; color: var(--text-main); }
-.btn-play {
-    background: var(--primary);
-    color: white;
-    width: 140px;
-    height: 45px;
-    border-radius: 25px;
-    font-size: 1rem;
+.progress-info {
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-muted-light);
+}
+.progress-info span { color: var(--text-white); }
+
+/* Botones de control (atrás/adelante) */
+.btn-control {
+    background: transparent;
+    font-size: 1.8rem;
+    color: var(--text-muted-light);
+    transition: 0.3s;
+}
+.btn-control:hover {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 15px var(--neon-cyan);
+    transform: scale(1.1);
 }
 
+/* BOTÓN DE REPRODUCCIÓN PRINCIPAL (El más llamativo) */
+.btn-play {
+    /* Gradiente vibrante */
+    background: var(--primary-btn-grad);
+    color: white;
+    width: 150px;
+    height: 50px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: none;
+    /* Sombra de resplandor fuerte */
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+}
+.btn-play:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(0, 198, 255, 0.8), 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Selector de velocidad */
+#speed-select {
+    background: var(--glass-bg);
+    color: var(--text-white);
+    border: 1px solid var(--glass-border);
+    padding: 5px 10px;
+    border-radius: 20px;
+    outline: none;
+    cursor: pointer;
+}
+#speed-select option { background-color: #1a0b2e; }
+
+/* =========================================
+   7. RESPONSIVE
+   ========================================= */
 @media (max-width: 768px) {
-    .player-bar { flex-direction: column; gap: 1rem; }
-    header { padding: 0.5rem 1rem; flex-direction: column; gap: 0.5rem;}
+    header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    .top-controls { flex-wrap: wrap; justify-content: center; }
+    
+    .player-bar {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    .main-buttons { order: -1; /* Botones primero en móvil */ }
 }
