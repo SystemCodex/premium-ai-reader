@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Reader - Elegant Edition</title>
+    <title>AI Reader Pro - Split View</title>
     <link rel="stylesheet" href="style.css">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
@@ -20,62 +16,60 @@
 
     <div class="app-container">
         <header>
-            <div class="header-left">
-                <h1>AI Reader <span class="accent-text">Premium</span></h1>
-                <div id="quota-info" class="quota-badge" style="display: none;">
-                    ✨ Caracteres: <span id="char-count">0</span>
-                </div>
+            <div class="brand">
+                <h1>AI Reader <span>Pro</span></h1>
+                <div class="status-pill" id="status-indicator">Esperando PDF...</div>
             </div>
             
-            <div class="top-controls">
-                <div class="voice-control-group">
-                    <select id="voice-select" class="voice-select">
+            <div class="controls-top">
+                <div class="voice-selector">
+                    <button id="btn-preview-voice" class="icon-btn" title="Escuchar demo">🔊</button>
+                    <select id="voice-select">
                         <option value="" disabled selected>Cargando voces...</option>
                     </select>
-                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escuchar voz">🔊</button>
                 </div>
 
                 <input type="file" id="pdf-upload" accept=".pdf" hidden>
-                <button onclick="document.getElementById('pdf-upload').click()" class="btn-primary">📂 Abrir PDF</button>
+                <button onclick="document.getElementById('pdf-upload').click()" class="btn-glow">
+                    📂 Cargar PDF
+                </button>
             </div>
         </header>
 
-        <div class="split-view">
-            <section class="panel text-panel">
-                <div class="panel-header">LECTURA INTELIGENTE</div>
-                <div id="viewer">
-                    <div id="text-content" class="placeholder-text">
-                        <p>Bienvenido a la experiencia Premium.</p>
-                        <p class="sub-text">Sube un documento para sincronizar audio y texto.</p>
+        <main class="split-view">
+            <section id="text-panel" class="glass-panel">
+                <div id="text-content" class="scrollable-content">
+                    <div class="placeholder">
+                        <h2>Modo Inmersivo</h2>
+                        <p>Sube un documento. El texto extraído aparecerá aquí y se sincronizará con la vista original.</p>
                     </div>
                 </div>
             </section>
 
-            <section class="panel pdf-panel">
-                <div class="panel-header">DOCUMENTO ORIGINAL - PÁG <span id="pdf-page-num">--</span></div>
-                <div id="pdf-canvas-container">
+            <section id="pdf-panel" class="glass-panel">
+                <div class="pdf-wrapper">
                     <canvas id="the-pdf-canvas"></canvas>
+                    <div class="pdf-overlay">
+                        Página <span id="pdf-page-num">--</span>
+                    </div>
                 </div>
             </section>
-        </div>
+        </main>
 
         <footer class="player-bar">
-            <div class="progress-info">
-                BLOQUE <span id="current-index">0</span> / <span id="total-sentences">0</span>
+            <div class="track-info">
+                <span id="current-progress">0 / 0</span>
             </div>
             
-            <div class="main-buttons">
-                <button id="btn-prev" class="btn-control">⏮</button>
-                <button id="btn-play" class="btn-play">INICIAR</button>
-                <button id="btn-next" class="btn-control">⏭</button>
+            <div class="play-controls">
+                <button id="btn-prev" class="ctrl-btn">⏮</button>
+                <button id="btn-play" class="play-btn">REPRODUCIR</button>
+                <button id="btn-next" class="ctrl-btn">⏭</button>
             </div>
             
-            <div class="settings">
-                <button id="btn-download-all" class="btn-download-all" style="display: none;">
-                    ⬇️ Descargar MP3
-                </button>
-                
-                <select id="speed-select">
+            <div class="extra-controls">
+                <button id="btn-download-all" class="text-btn" style="display: none;">⬇️ MP3</button>
+                <select id="speed-select" class="speed-select">
                     <option value="1">1.0x</option>
                     <option value="1.25">1.25x</option>
                     <option value="1.5">1.5x</option>
