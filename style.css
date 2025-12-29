@@ -1,21 +1,16 @@
-/* =========================================
-   1. VARIABLES Y TEMAS (Colores)
-   ========================================= */
+/* VARIABLES Y COLORES */
 :root {
-    /* Tema Claro (Por defecto) */
-    --bg-app: #f8f9fa;          /* Fondo general */
-    --bg-panel: #ffffff;        /* Fondo de barras (header/footer) */
-    --text-main: #1f2937;       /* Texto principal */
-    --text-muted: #6b7280;      /* Texto secundario */
-    --primary: #6366f1;         /* Color principal (Indigo) */
-    --primary-hover: #4f46e5;   /* Color al pasar el mouse */
-    --highlight-bg: #e0e7ff;    /* Fondo de la palabra actual */
-    --highlight-text: #3730a3;  /* Texto de la palabra actual */
-    --border: #e5e7eb;          /* Bordes */
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --bg-app: #f8f9fa;
+    --bg-panel: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --highlight-bg: #e0e7ff;
+    --highlight-text: #3730a3;
+    --border: #e5e7eb;
 }
 
-/* Tema Oscuro (Se activa con JS) */
 body.dark-mode {
     --bg-app: #111827;
     --bg-panel: #1f2937;
@@ -26,246 +21,121 @@ body.dark-mode {
     --highlight-bg: #312e81;
     --highlight-text: #e0e7ff;
     --border: #374151;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
 }
 
-/* =========================================
-   2. ESTRUCTURA BASE (Layout)
-   ========================================= */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-    height: 100%; /* Ocupar toda la pantalla */
-    width: 100%;
-}
+html, body { height: 100%; width: 100%; }
 
 body {
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
     background-color: var(--bg-app);
     color: var(--text-main);
-    overflow: hidden; /* Evita doble barra de scroll en el navegador */
-    transition: background-color 0.3s, color 0.3s;
+    overflow: hidden; /* Evita doble barra de scroll */
 }
 
-/* Contenedor principal que organiza Header - Centro - Footer */
+/* CONTENEDOR PRINCIPAL (Flexbox Vertical) */
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* 100% de la altura de la ventana */
+    height: 100vh;
 }
 
-/* =========================================
-   3. ENCABEZADO (Header)
-   ========================================= */
+/* HEADER */
 header {
-    background-color: var(--bg-panel);
-    padding: 1rem 2rem;
+    background: var(--bg-panel);
+    padding: 0.8rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border);
-    box-shadow: var(--shadow);
-    flex-shrink: 0; /* Evita que el header se aplaste */
-    z-index: 10;
+    flex-shrink: 0;
 }
 
-header h1 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--primary);
-}
+.top-controls { display: flex; gap: 10px; align-items: center; }
 
-.top-controls {
+/* Selector de Voz */
+.voice-control-group {
     display: flex;
-    gap: 1rem;
     align-items: center;
+    gap: 5px;
+    background: rgba(0,0,0,0.05);
+    padding: 4px 8px;
+    border-radius: 8px;
+    margin-right: 10px;
+    border: 1px solid var(--border);
+}
+.voice-select {
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    max-width: 150px;
+    outline: none;
 }
 
-/* =========================================
-   4. VISUALIZADOR DE TEXTO (Centro)
-   ========================================= */
+/* BOTONES */
+button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; transition: 0.2s; }
+.btn-primary { background: var(--primary); color: white; padding: 8px 16px; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-icon { background: transparent; font-size: 1.2rem; padding: 5px; }
+
+/* ZONA DE LECTURA (CENTRO - SCROLLABLE) */
 #viewer {
-    flex: 1; /* Ocupa todo el espacio disponible entre header y footer */
-    overflow-y: auto; /* ¡IMPORTANTE! Habilita el scroll vertical aquí */
+    flex: 1;
+    overflow-y: auto; /* SCROLL AQUÍ */
     padding: 2rem;
     width: 100%;
     scroll-behavior: smooth;
 }
 
-/* Contenedor del texto limitado al centro */
 #text-content {
     max-width: 800px;
     margin: 0 auto;
+    font-size: 1.1rem;
     line-height: 1.8;
-    font-size: 1.15rem;
-    text-align: justify;
 }
 
-/* Estilo de cada oración */
+/* Bloques de texto (Chunks) */
 .sentence {
-    padding: 2px 0;
-    border-radius: 4px;
+    display: block;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    border: 1px solid transparent;
 }
-
-.sentence:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-
-/* Estilo de la oración activa (Leyendo) */
+.sentence:hover { background-color: rgba(0,0,0,0.05); border-color: var(--border); }
 .sentence.active {
     background-color: var(--highlight-bg);
     color: var(--highlight-text);
-    padding: 4px;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
-    font-weight: 600;
-    border-radius: 4px;
+    border-left: 5px solid var(--primary);
+    font-weight: 500;
 }
 
-/* Texto de espera */
-.placeholder-text {
-    text-align: center;
-    color: var(--text-muted);
-    margin-top: 3rem;
-    font-style: italic;
-}
-
-/* =========================================
-   5. BARRA DE REPRODUCCIÓN (Footer)
-   ========================================= */
+/* FOOTER */
 .player-bar {
-    background-color: var(--bg-panel);
+    background: var(--bg-panel);
     border-top: 1px solid var(--border);
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* Evita que el footer se oculte */
+    flex-shrink: 0;
     z-index: 10;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
 }
 
-.progress-info {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    width: 150px;
-}
-
-.main-buttons {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.settings {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 150px;
-    justify-content: flex-end;
-    font-size: 0.9rem;
-}
-
-/* =========================================
-   6. BOTONES E INPUTS
-   ========================================= */
-button {
-    cursor: pointer;
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-/* Botón "Subir PDF" */
-.btn-primary {
-    background-color: var(--primary);
-    color: white;
-    padding: 0.6rem 1.2rem;
-}
-.btn-primary:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-1px);
-}
-
-/* Botón Tema (Luna) */
-.btn-icon {
-    background: transparent;
-    font-size: 1.4rem;
-    padding: 0.4rem;
-    color: var(--text-main);
-}
-.btn-icon:hover {
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 50%;
-}
-
-/* Botón Reproducir Grande */
+.btn-control { background: transparent; font-size: 1.5rem; color: var(--text-main); }
 .btn-play {
-    background-color: var(--primary);
+    background: var(--primary);
     color: white;
-    padding: 0.8rem 2rem;
-    border-radius: 30px;
+    width: 140px;
+    height: 45px;
+    border-radius: 25px;
     font-size: 1rem;
-    min-width: 140px;
-    box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
-}
-.btn-play:hover {
-    background-color: var(--primary-hover);
-    transform: scale(1.05);
 }
 
-/* Botones Anterior/Siguiente */
-.btn-control {
-    background: transparent;
-    font-size: 1.8rem;
-    color: var(--text-main);
-    padding: 0 0.5rem;
-}
-.btn-control:hover {
-    color: var(--primary);
-}
-
-select {
-    padding: 0.4rem;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background-color: var(--bg-app);
-    color: var(--text-main);
-}
-
-/* =========================================
-   7. RESPONSIVE (Móvil)
-   ========================================= */
 @media (max-width: 768px) {
-    .player-bar {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1.5rem;
-    }
-
-    .main-buttons {
-        order: -1; /* Poner botones arriba en móvil */
-    }
-
-    .progress-info, .settings {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
-    }
-
-    header {
-        padding: 1rem;
-    }
-    
-    header h1 {
-        font-size: 1rem;
-    }
+    .player-bar { flex-direction: column; gap: 1rem; }
+    header { padding: 0.5rem 1rem; flex-direction: column; gap: 0.5rem;}
+    .top-controls { flex-wrap: wrap; justify-content: center; }
 }
