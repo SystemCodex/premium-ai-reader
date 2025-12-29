@@ -1,31 +1,40 @@
 // ==========================================
-// AI READER - OBSIDIAN EDITION (GOLD)
+// AI READER - LIGHT FLUID EDITION
 // ==========================================
 
 let textChunks = []; 
 let currentChunkIndex = 0;
 let isPlaying = false;
 let pdfDoc = null; 
+let currentRenderedPage = 0; // Variable global para la página actual
 
 const audioPlayer = new Audio();
 audioPlayer.crossOrigin = "anonymous"; 
 const previewPlayer = new Audio();
 
 const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
-const MAX_CHUNK_SIZE = 800; // Ajustado para precisión de página
+const MAX_CHUNK_SIZE = 800;
 
 let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; 
 let audioCache = {}; 
 let blobCache = {};
 let availableVoices = [];
 
-// VISUALIZADOR
+// VISUALIZADOR VARS
 let audioContext, analyser, canvas, ctx, particles = [];
 
 // 1. INICIALIZACIÓN
 window.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
-    initParticleSystem();
+    initParticleSystem(); // Iniciar partículas en el fondo
+
+    // LISTENER PARA REDIMENSIONAR EL PDF AUTOMÁTICAMENTE
+    window.addEventListener('resize', () => {
+        if(pdfDoc && currentRenderedPage > 0) {
+            // Forzar re-render de la página actual al cambiar tamaño de ventana
+            renderPdfPage(currentRenderedPage, true); 
+        }
+    });
 });
 
 async function loadVoices() {
@@ -63,7 +72,7 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    document.getElementById('text-content').innerHTML = "⏳ Analizando estructura del documento...";
+    document.getElementById('text-content').innerHTML = "⏳ Procesando documento...";
     
     const reader = new FileReader();
     reader.onload = async function() {
@@ -108,7 +117,7 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
             currentChunkIndex = 0;
             localStorage.setItem('lastChunkIndex', 0);
             renderText();
-            renderPdfPage(1);
+            renderPdfPage(1); // Renderizar primera página
 
         } catch (error) {
             console.error(error);
@@ -122,16 +131,18 @@ function renderText() {
     const container = document.getElementById('text-content');
     container.innerHTML = textChunks.map((chunk, i) => 
         `<div id="chunk-${i}" class="sentence" onclick="jumpTo(${i})">
-            <span style="opacity:0.4; font-size:0.7em; color:var(--gold-primary)">PÁG ${chunk.page}</span><br>
+            <span style="opacity:0.6; font-size:0.7em; font-weight:bold; color:var(--accent-color)">PÁG ${chunk.page}</span><br>
             ${chunk.text}
-            <br><a id="download-${i}" class="download-link" style="display:none">⬇️ Guardar</a>
+            <br><a id="download-${i}" class="download-link" style="display:none">⬇️ Guardar Bloque</a>
         </div>`
     ).join("");
 }
 
-let currentRenderedPage = 0;
-async function renderPdfPage(pageNum) {
-    if(!pdfDoc || pageNum === currentRenderedPage) return;
+// FUNCIÓN DE RENDERIZADO PDF MEJORADA (ADAPTABLE)
+async function renderPdfPage(pageNum, forceRender = false) {
+    // Si no forzamos y es la misma página, no hacemos nada
+    if(!pdfDoc || (pageNum === currentRenderedPage && !forceRender)) return;
+    
     currentRenderedPage = pageNum;
     document.getElementById('pdf-page-num').innerText = pageNum;
 
@@ -139,16 +150,26 @@ async function renderPdfPage(pageNum) {
     const canvas = document.getElementById('the-pdf-canvas');
     const ctx = canvas.getContext('2d');
     
-    // Escala dinámica para ajustar al panel
-    const containerWidth = document.getElementById('pdf-canvas-container').clientWidth - 60;
-    const viewport = page.getViewport({ scale: 1 });
-    const scale = containerWidth / viewport.width;
+    // 1. Obtenemos el ancho real del contenedor en este momento
+    const containerWidth = document.getElementById('pdf-canvas-container').clientWidth;
+    
+    // 2. Calculamos la escala necesaria para ajustar al ancho (restando un pequeño margen)
+    const viewportUnscaled = page.getViewport({ scale: 1 });
+    // Usamos Math.min para asegurar que no se escale a más de 1.5x si el contenedor es enorme
+    const desiredWidth = containerWidth - 40; // Margen de 20px a cada lado
+    const scale = Math.min(desiredWidth / viewportUnscaled.width, 2.0); 
+    
     const scaledViewport = page.getViewport({ scale: scale });
 
     canvas.height = scaledViewport.height;
     canvas.width = scaledViewport.width;
 
-    await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+    // Renderizar
+    if (window.pdfRenderTask) {
+        await window.pdfRenderTask.cancel(); // Cancelar render previo si existe
+    }
+    window.pdfRenderTask = page.render({ canvasContext: ctx, viewport: scaledViewport });
+    await window.pdfRenderTask.promise;
 }
 
 // 3. REPRODUCIR
@@ -172,6 +193,7 @@ async function playCurrentChunk() {
 
     const btn = document.getElementById('btn-play');
     btn.innerText = "CARGANDO...";
+    btn.style.opacity = "0.7";
 
     try {
         let audioUrl;
@@ -196,6 +218,7 @@ async function playCurrentChunk() {
         
         await audioPlayer.play();
         btn.innerText = "PAUSA";
+        btn.style.opacity = "1";
         
         audioPlayer.onended = () => {
             if (isPlaying) {
@@ -209,6 +232,8 @@ async function playCurrentChunk() {
         isPlaying = false;
         updatePlayButton();
         alert(error.message);
+        btn.innerText = "INICIAR";
+        btn.style.opacity = "1";
     }
 }
 
@@ -240,37 +265,45 @@ document.getElementById('btn-download-all').addEventListener('click', () => {
     const mergedBlob = new Blob(blobsToMerge, { type: 'audio/mpeg' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(mergedBlob);
-    a.download = `Audiolibro_Completo.mp3`;
+    a.download = `Audiolibro_Fluid.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 });
 
-// PARTÍCULAS DORADAS
+// ==========================================
+// SISTEMA DE PARTÍCULAS REACTIVAS (FONDO)
+// ==========================================
 class Particle {
     constructor() { this.reset(); }
     reset() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2.5;
+        this.size = Math.random() * 5 + 2;
         this.speedX = Math.random() * 0.4 - 0.2;
         this.speedY = Math.random() * 0.4 - 0.2;
-        // COLOR DORADO / AMBAR
-        this.color = `rgba(251, 191, 36, ${Math.random() * 0.2 + 0.05})`;
+        // Colores del gradiente fluido (rosa/morado/cian) con transparencia
+        const colors = ['rgba(217, 70, 239, 0.3)', 'rgba(139, 92, 246, 0.3)', 'rgba(6, 182, 212, 0.3)'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
     }
     update(intensity) {
-        this.x += this.speedX * (1 + intensity * 3);
-        this.y += this.speedY * (1 + intensity * 3);
-        if(intensity > 0.1) this.size = Math.random() * 4 + intensity * 5;
+        // La intensidad del audio aumenta la velocidad y el tamaño
+        const speedFactor = 1 + (intensity * 5);
+        this.x += this.speedX * speedFactor;
+        this.y += this.speedY * speedFactor;
         
+        // Efecto de "latido" con la música
+        this.currentSize = this.size * (1 + intensity * 2);
+
         if(this.x > canvas.width || this.x < 0) this.reset();
         if(this.y > canvas.height || this.y < 0) this.reset();
     }
     draw() {
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.shadowBlur = 10;
+        ctx.arc(this.x, this.y, this.currentSize, 0, Math.PI * 2);
+        // Efecto borroso (glow)
+        ctx.shadowBlur = 20;
         ctx.shadowColor = this.color;
         ctx.fill();
         ctx.shadowBlur = 0;
@@ -281,20 +314,31 @@ function initParticleSystem() {
     canvas = document.getElementById('bg-visualizer');
     ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    for(let i=0; i<80; i++) particles.push(new Particle());
+    
+    // Redimensionar canvas al cambiar ventana
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    });
+
+    for(let i=0; i<70; i++) particles.push(new Particle());
     animateParticles();
 }
 
 function animateParticles() {
     requestAnimationFrame(animateParticles);
     ctx.clearRect(0,0,canvas.width, canvas.height);
+    
     let intensity = 0;
     if(isPlaying && analyser) {
         const arr = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(arr);
+        // Calculamos el volumen promedio
         let sum = 0; for(let i=0; i<arr.length; i++) sum += arr[i];
         intensity = (sum / arr.length) / 255;
+        // Reducimos un poco la sensibilidad
+        intensity = intensity * 0.6; 
     }
+    
     particles.forEach(p => { p.update(intensity); p.draw(); });
 }
 
@@ -310,22 +354,15 @@ function highlightChunk(index) {
 function enableDownloadLink(index, url) {
     const link = document.getElementById(`download-${index}`);
     if(link) {
-        link.href = url;
-        link.download = `bloque_${index}.mp3`;
-        link.style.display = "inline-block";
+        link.href = url; link.download = `bloque_${index}.mp3`; link.style.display = "inline-block";
     }
 }
 function updatePlayButton() {
     const btn = document.getElementById('btn-play');
     if(isPlaying) {
         btn.innerText = "PAUSA";
-        btn.style.background = "transparent";
-        btn.style.color = "#fbbf24";
-        btn.style.border = "1px solid #fbbf24";
     } else {
         btn.innerText = "INICIAR";
-        btn.style.background = "#fbbf24"; 
-        btn.style.color = "#000";
     }
 }
 function setupAudioContext() {
@@ -334,7 +371,7 @@ function setupAudioContext() {
     const source = audioContext.createMediaElementSource(audioPlayer);
     source.connect(analyser);
     analyser.connect(audioContext.destination);
-    analyser.fftSize = 64;
+    analyser.fftSize = 256;
 }
 
 // Listeners
