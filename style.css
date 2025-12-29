@@ -1,47 +1,32 @@
 /* IMPORTAR FUENTE MODERNA (Montserrat) */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
 
-/* =========================================
-   1. VARIABLES FUTURISTAS & COLORES
-   ========================================= */
+/* VARIABLES FUTURISTAS */
 :root {
-    /* Fondo Gradiente Principal (Inspirado en la referencia) */
-    --bg-gradient: linear-gradient(135deg, #1a0b2e 0%, #391356 50%, #0f255c 100%);
+    --bg-gradient: linear-gradient(135deg, #120428 0%, #1f0846 50%, #061836 100%);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: blur(15px);
     
-    /* Efecto Vidrio (Glassmorphism) */
-    --glass-bg: rgba(255, 255, 255, 0.08); /* Fondo translúcido */
-    --glass-border: rgba(255, 255, 255, 0.15); /* Borde sutil */
-    --glass-blur: blur(12px); /* Desenfoque del fondo */
-    
-    /* Textos */
     --text-white: #ffffff;
-    --text-muted-light: #b3b3b3;
+    --text-muted: #a0a0a0;
     
-    /* Acentos de Neón */
-    --neon-cyan: #00e5ff;
-    --neon-pink: #ff00a8;
-    --neon-glow-shadow: 0 0 15px rgba(0, 229, 255, 0.4); /* Resplandor cian */
+    --neon-cyan: #00f3ff;
+    --neon-purple: #bc13fe;
+    --neon-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
     
-    /* Gradiente para botón principal */
-    --primary-btn-grad: linear-gradient(90deg, var(--neon-cyan), #0072ff);
+    --btn-grad: linear-gradient(90deg, var(--neon-purple), #5e1df1);
 }
 
-/* El modo oscuro ya no es necesario porque el diseño base ES oscuro. 
-   Podemos eliminar el bloque body.dark-mode por ahora. */
-
-/* =========================================
-   2. ESTRUCTURA BASE
-   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; width: 100%; }
 
 body {
-    /* Usamos la nueva fuente y el fondo gradiente */
     font-family: 'Montserrat', sans-serif;
-    background: var(--bg-gradient); /* Fondo futurista */
-    background-attachment: fixed; /* El fondo se queda fijo al hacer scroll */
-    color: var(--text-white); /* Texto blanco */
-    overflow: hidden;
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--text-white);
+    overflow: hidden; /* Evita doble scroll */
 }
 
 .app-container {
@@ -50,111 +35,79 @@ body {
     height: 100vh;
 }
 
-/* =========================================
-   3. ENCABEZADO (HEADER) - EFECTO VIDRIO
-   ========================================= */
+/* HEADER ESTILO VIDRIO */
 header {
-    /* Fondo translúcido + Desenfoque */
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur); /* Para Safari */
-    
     border-bottom: 1px solid var(--glass-border);
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2); /* Sombra suave */
     z-index: 10;
 }
 
 header h1 {
     font-weight: 800;
-    text-transform: uppercase; /* Mayúsculas */
-    letter-spacing: 2px; /* Espaciado entre letras */
-    /* Pequeño resplandor en el texto */
-    text-shadow: 0 0 10px rgba(0, 229, 255, 0.3); 
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #fff, var(--neon-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.top-controls { display: flex; gap: 12px; align-items: center; }
+.top-controls { display: flex; gap: 15px; align-items: center; }
 
-/* =========================================
-   4. SELECTORES Y BOTONES FUTURISTAS
-   ========================================= */
-
-/* Grupo del selector de voz */
+/* SELECTOR DE VOZ */
 .voice-control-group {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--glass-border);
+    padding: 5px 15px;
+    border-radius: 50px;
     display: flex;
     align-items: center;
-    gap: 5px;
-    /* Fondo de vidrio */
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    padding: 6px 10px;
-    border-radius: 30px; /* Bordes muy redondeados */
-    margin-right: 10px;
-    backdrop-filter: blur(5px);
+    gap: 10px;
 }
 
-/* El selector (dropdown) */
 .voice-select {
-    border: none;
     background: transparent;
+    border: none;
     color: var(--text-white);
     font-family: inherit;
     font-weight: 600;
-    max-width: 160px;
+    max-width: 150px;
     outline: none;
     cursor: pointer;
 }
+.voice-select option { background-color: #1f0846; }
 
-/* Opciones del selector (Para que se vean oscuras al abrirlo) */
-.voice-select option {
-    background-color: #1a0b2e; /* Color oscuro sólido */
-    color: white;
-}
+/* BOTONES */
+button { cursor: pointer; transition: 0.3s; font-family: inherit; }
 
-/* Botones Generales */
-button {
-    cursor: pointer;
-    border-radius: 30px; /* Botones estilo cápsula */
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-}
-
-/* Botón "Subir PDF" */
 .btn-primary {
-    background: rgba(255, 255, 255, 0.1); /* Semi-transparente */
-    color: var(--text-white);
-    padding: 8px 20px;
+    background: rgba(255,255,255,0.1);
+    color: white;
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(5px);
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 600;
 }
 .btn-primary:hover {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); /* Resplandor blanco */
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
 }
 
-/* Botones Icono (Bocina, Luna) */
 .btn-icon {
     background: transparent;
+    border: none;
     color: var(--text-white);
-    font-size: 1.3rem;
-    padding: 6px;
-    border: 1px solid transparent;
+    font-size: 1.2rem;
 }
-.btn-icon:hover {
-    color: var(--neon-cyan);
-    text-shadow: 0 0 10px var(--neon-cyan);
-}
+.btn-icon:hover { color: var(--neon-cyan); transform: scale(1.1); }
 
-/* =========================================
-   5. ZONA DE LECTURA (VIEWER)
-   ========================================= */
+/* VISUALIZADOR DE TEXTO */
 #viewer {
     flex: 1;
     overflow-y: auto;
@@ -164,61 +117,51 @@ button {
 }
 
 #text-content {
-    max-width: 850px;
+    max-width: 800px;
     margin: 0 auto;
-    font-size: 1.15rem;
-    line-height: 1.9;
-    letter-spacing: 0.5px;
+    font-size: 1.2rem;
+    line-height: 1.8;
 }
 
 .placeholder-text {
-    color: var(--text-muted-light);
     text-align: center;
+    color: var(--text-muted);
     font-style: italic;
-    opacity: 0.8;
+    margin-top: 50px;
 }
 
-/* Bloques de texto */
+/* BLOQUES DE TEXTO */
 .sentence {
     display: block;
-    margin-bottom: 1.5rem;
-    padding: 1.2rem;
-    border-radius: 12px;
-    cursor: pointer;
-    /* Borde transparente por defecto para que no salte al activarse */
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.02);
     border: 1px solid transparent;
-    transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.02); /* Fondo muy sutil */
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
 .sentence:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background: rgba(255,255,255,0.05);
     border-color: var(--glass-border);
 }
 
-/* BLOQUE ACTIVO (LEYENDO) - EFECTO NEÓN */
+/* EFECTO ACTIVO (NEÓN) */
 .sentence.active {
-    /* Fondo cian translúcido */
-    background-color: rgba(0, 229, 255, 0.1); 
-    color: var(--text-white);
-    /* Borde izquierdo brillante */
-    border-left: 4px solid var(--neon-cyan); 
-    /* Resplandor alrededor de la caja */
-    box-shadow: var(--neon-glow-shadow), inset 0 0 10px rgba(0, 229, 255, 0.1);
-    font-weight: 600;
+    background: rgba(0, 243, 255, 0.05);
+    border: 1px solid var(--neon-cyan);
+    box-shadow: var(--neon-shadow), inset 0 0 20px rgba(0, 243, 255, 0.1);
+    color: white;
+    transform: scale(1.02);
 }
 
-/* =========================================
-   6. BARRA DE REPRODUCCIÓN (FOOTER)
-   ========================================= */
+/* FOOTER */
 .player-bar {
-    /* Efecto vidrio igual que el header */
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--glass-border);
-    
-    padding: 1rem 2rem;
+    padding: 1rem 3rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -226,73 +169,47 @@ button {
     z-index: 10;
 }
 
-.progress-info {
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: var(--text-muted-light);
-}
-.progress-info span { color: var(--text-white); }
+.progress-info { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; }
+.progress-info span { color: var(--neon-cyan); }
 
-/* Botones de control (atrás/adelante) */
 .btn-control {
     background: transparent;
-    font-size: 1.8rem;
-    color: var(--text-muted-light);
-    transition: 0.3s;
-}
-.btn-control:hover {
-    color: var(--neon-cyan);
-    text-shadow: 0 0 15px var(--neon-cyan);
-    transform: scale(1.1);
-}
-
-/* BOTÓN DE REPRODUCCIÓN PRINCIPAL (El más llamativo) */
-.btn-play {
-    /* Gradiente vibrante */
-    background: var(--primary-btn-grad);
-    color: white;
-    width: 150px;
-    height: 50px;
-    border-radius: 30px;
-    font-size: 1.1rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
     border: none;
-    /* Sombra de resplandor fuerte */
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+    font-size: 2rem;
+    color: var(--text-muted);
+}
+.btn-control:hover { color: var(--text-white); text-shadow: 0 0 10px white; }
+
+/* BOTÓN PLAY GRANDE */
+.btn-play {
+    background: var(--btn-grad);
+    color: white;
+    border: none;
+    width: 160px;
+    height: 50px;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(94, 29, 241, 0.4);
 }
 .btn-play:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(0, 198, 255, 0.8), 0 0 10px rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(188, 19, 254, 0.6);
 }
 
-/* Selector de velocidad */
 #speed-select {
-    background: var(--glass-bg);
-    color: var(--text-white);
+    background: rgba(0,0,0,0.3);
+    color: white;
     border: 1px solid var(--glass-border);
     padding: 5px 10px;
-    border-radius: 20px;
-    outline: none;
-    cursor: pointer;
+    border-radius: 10px;
 }
-#speed-select option { background-color: #1a0b2e; }
+#speed-select option { background-color: #1f0846; }
 
-/* =========================================
-   7. RESPONSIVE
-   ========================================= */
+/* MÓVIL */
 @media (max-width: 768px) {
-    header {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-    }
+    header, .player-bar { flex-direction: column; gap: 1rem; padding: 1rem; }
     .top-controls { flex-wrap: wrap; justify-content: center; }
-    
-    .player-bar {
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 1.5rem;
-    }
-    .main-buttons { order: -1; /* Botones primero en móvil */ }
+    .main-buttons { order: -1; }
 }
