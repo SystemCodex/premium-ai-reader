@@ -2,42 +2,55 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>AI Premium Reader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium AI Reader</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        // Configurar el worker de PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
 </head>
 <body>
     <div class="app-container">
         <header>
-            <h1>Premium Reader</h1>
+            <h1>📚 AI Reader Premium</h1>
             <div class="top-controls">
                 <input type="file" id="pdf-upload" accept=".pdf" hidden>
-                <button onclick="document.getElementById('pdf-upload').click()">Subir PDF</button>
-                <button id="theme-toggle">🌙</button>
+                <button onclick="document.getElementById('pdf-upload').click()" class="btn-primary">📂 Subir PDF</button>
+                <button id="theme-toggle" class="btn-icon">🌙</button>
             </div>
         </header>
 
         <main id="viewer">
-            <div id="text-content">El libro aparecerá aquí...</div>
+            <div id="text-content" class="placeholder-text">
+                Sube un archivo PDF para comenzar la lectura...
+            </div>
         </main>
 
         <footer class="player-bar">
             <div class="progress-info">
                 Oración: <span id="current-index">0</span> / <span id="total-sentences">0</span>
             </div>
+            
             <div class="main-buttons">
-                <button id="btn-prev">⏮</button>
-                <button id="btn-play" class="play-main">Reproducir</button>
-                <button id="btn-next">⏭</button>
+                <button id="btn-prev" class="btn-control">⏮</button>
+                <button id="btn-play" class="btn-play">▶ Reproducir</button>
+                <button id="btn-next" class="btn-control">⏭</button>
             </div>
+            
             <div class="settings">
+                <label for="speed-select">Velocidad:</label>
                 <select id="speed-select">
                     <option value="1">1.0x</option>
+                    <option value="1.25">1.25x</option>
                     <option value="1.5">1.5x</option>
+                    <option value="2">2.0x</option>
                 </select>
             </div>
         </footer>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
