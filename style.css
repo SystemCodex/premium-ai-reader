@@ -1,19 +1,18 @@
-/* Fuente limpia para lectura en pantalla */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
 :root {
-    /* PALETA "NORDIC NIGHT" (Lectura Fácil) */
-    --bg-main: #0f172a;       /* Fondo principal (Azul muy oscuro mate) */
-    --bg-panel: #1e293b;      /* Paneles (Azul pizarra) */
+    /* PALETA NORDIC HUD (Futurista pero mate) */
+    --bg-main: #020617;       /* Negro azulado profundo */
+    --bg-cell: rgba(15, 23, 42, 0.75); /* Celda semitransparente */
     
-    --text-primary: #e2e8f0;  /* Blanco hueso (menos agresivo) */
-    --text-muted: #94a3b8;    /* Texto secundario */
+    --text-primary: #e2e8f0;
+    --text-muted: #64748b;
     
-    --accent: #38bdf8;        /* Azul Cyan suave para destaques */
-    --accent-hover: #0ea5e9;
+    --accent: #38bdf8;        /* Azul Cyan HUD */
+    --accent-dim: rgba(56, 189, 248, 0.1);
     
-    --border: #334155;        /* Bordes sutiles */
-    --radius: 12px;
+    --border: rgba(56, 189, 248, 0.3); /* Borde sutil tecnológico */
+    --radius: 8px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,10 +22,20 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    overflow: hidden; /* Evita scroll en el body, solo en el viewer */
+    overflow: hidden;
+}
+
+/* CANVAS DE FONDO */
+#bg-visualizer {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .app-container {
+    position: relative;
+    z-index: 1; 
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -34,204 +43,161 @@ body {
 
 /* HEADER */
 header {
-    background-color: var(--bg-panel);
+    background: rgba(2, 6, 23, 0.9);
     border-bottom: 1px solid var(--border);
-    padding: 1rem 2rem;
+    padding: 0.8rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
-    z-index: 20;
 }
 
 .header-left h1 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 5px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
 }
 
 .quota-badge {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    background: rgba(0,0,0,0.2);
-    padding: 2px 8px;
+    border: 1px solid var(--border);
+    padding: 2px 6px;
     border-radius: 4px;
-    display: inline-block;
 }
-.quota-badge span { color: var(--accent); }
 
-.top-controls { display: flex; gap: 12px; align-items: center; }
+.top-controls { display: flex; gap: 10px; align-items: center; }
 
-/* VISUALIZADOR DE AUDIO */
-#audio-visualizer {
-    width: 100%;
-    height: 60px; /* Altura discreta */
-    background: var(--bg-main);
-    flex-shrink: 0;
+/* LAYOUT DIVIDIDO (SPLIT VIEW) */
+.split-view {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 50% - 50% */
+    gap: 20px;
+    padding: 20px;
+    overflow: hidden; /* Importante */
+}
+
+/* ESTILO DE CELDAS FUTURISTAS */
+.panel {
+    background: var(--bg-cell);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+/* Encabezado pequeño de cada celda */
+.panel-header {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 8px 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     border-bottom: 1px solid var(--border);
 }
 
-/* BOTONES Y SELECTORES */
-button { cursor: pointer; border: none; font-family: inherit; transition: 0.2s; }
-
-.btn-primary {
-    background-color: var(--accent);
-    color: #0f172a; /* Texto oscuro sobre fondo claro */
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: var(--radius);
-}
-.btn-primary:hover { background-color: var(--accent-hover); }
-
-.voice-control-group {
-    background: var(--bg-main);
-    border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-}
-
-.voice-select {
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    outline: none;
-    font-size: 0.9rem;
-    max-width: 140px;
-    cursor: pointer;
-}
-.voice-select option { background-color: var(--bg-panel); }
-
-.btn-icon {
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    padding: 0 5px;
-}
-.btn-icon:hover { color: var(--accent); }
-
-/* ÁREA DE LECTURA */
+/* PANEL IZQUIERDO: TEXTO */
 #viewer {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
+    padding: 1.5rem;
     scroll-behavior: smooth;
-    background-color: var(--bg-main);
 }
 
-#text-content {
-    max-width: 800px;
-    margin: 0 auto;
-    font-size: 1.15rem;
-    line-height: 1.8;
-    color: #cbd5e1;
+/* PANEL DERECHO: PDF CANVAS */
+#pdf-canvas-container {
+    flex: 1;
+    overflow: auto;
+    background: rgba(0,0,0,0.5); /* Fondo oscuro para el PDF */
+    display: flex;
+    justify-content: center;
+    padding: 20px;
 }
-
-.placeholder-text {
-    text-align: center;
-    color: var(--text-muted);
-    margin-top: 3rem;
+#the-pdf-canvas {
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    max-width: 100%;
 }
-.sub-text { font-size: 0.9rem; margin-top: 10px; opacity: 0.8; }
 
 /* BLOQUES DE TEXTO */
 .sentence {
     display: block;
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
-    border-radius: var(--radius);
-    background-color: var(--bg-panel);
-    border: 1px solid transparent;
-    transition: all 0.2s;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    background-color: rgba(255,255,255,0.03);
+    border-left: 2px solid transparent;
     cursor: pointer;
+    transition: all 0.2s;
+    color: #cbd5e1;
+    line-height: 1.6;
 }
 
 .sentence:hover {
-    border-color: var(--border);
-    background-color: #263345;
+    background-color: rgba(255,255,255,0.07);
 }
 
-/* ESTADO ACTIVO (LEYENDO) */
 .sentence.active {
-    background-color: #1e3a8a; /* Azul más intenso para destacar */
-    border-left: 4px solid var(--accent);
-    color: #ffffff;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    background-color: rgba(56, 189, 248, 0.15); /* Azul suave */
+    border-left: 3px solid var(--accent);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
 }
-
-/* Enlace de descarga individual */
-.download-link {
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 0.85rem;
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 600;
-}
-.download-link:hover { text-decoration: underline; }
 
 /* FOOTER */
 .player-bar {
-    background-color: var(--bg-panel);
+    background: rgba(2, 6, 23, 0.9);
     border-top: 1px solid var(--border);
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
-    z-index: 20;
 }
 
-.progress-info { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
-.progress-info span { color: var(--text-primary); }
-
-.btn-control {
-    background: transparent;
-    font-size: 1.8rem;
-    color: var(--text-muted);
+/* BOTONES ESTILO HUD */
+.btn-primary {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 4px;
 }
-.btn-control:hover { color: var(--text-primary); transform: scale(1.1); }
+.btn-primary:hover { background: var(--accent); color: #000; }
 
 .btn-play {
-    background-color: var(--text-primary);
-    color: var(--bg-main);
-    border-radius: 30px;
-    padding: 10px 30px;
+    background: var(--text-primary);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 30px;
     font-weight: 700;
     font-size: 0.9rem;
-    letter-spacing: 1px;
-    min-width: 140px;
+    box-shadow: 0 0 10px rgba(255,255,255,0.2);
 }
-.btn-play:hover { background-color: #fff; transform: translateY(-1px); }
 
-/* Botón descarga completa */
-.btn-download-all {
-    background: transparent;
+.voice-control-group, #speed-select {
+    background: rgba(0,0,0,0.5);
     border: 1px solid var(--border);
-    color: var(--accent);
-    padding: 6px 12px;
-    border-radius: var(--radius);
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-right: 10px;
-}
-.btn-download-all:hover { 
-    border-color: var(--accent); 
-    background: rgba(56, 189, 248, 0.1); 
-}
-
-#speed-select {
-    background-color: var(--bg-main);
     color: var(--text-primary);
-    border: 1px solid var(--border);
-    padding: 6px;
-    border-radius: 6px;
+    border-radius: 4px;
+    padding: 4px;
 }
+.voice-select { color: var(--text-primary); background: transparent; border: none; outline: none; }
+.voice-select option { background: #020617; }
 
-@media (max-width: 768px) {
-    header, .player-bar { flex-direction: column; gap: 1rem; padding: 1rem; }
-    .top-controls { flex-wrap: wrap; justify-content: center; }
-    .main-buttons { order: -1; }
+/* MÓVIL (Stack columns) */
+@media (max-width: 900px) {
+    .split-view { grid-template-columns: 1fr; }
+    .pdf-panel { height: 300px; } /* PDF más pequeño en móvil */
 }
