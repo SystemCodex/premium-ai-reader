@@ -1,4 +1,4 @@
-/* VARIABLES Y COLORES */
+/* VARIABLES */
 :root {
     --bg-app: #f8f9fa;
     --bg-panel: #ffffff;
@@ -24,17 +24,15 @@ body.dark-mode {
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body { height: 100%; width: 100%; }
 
 body {
     font-family: 'Segoe UI', sans-serif;
     background-color: var(--bg-app);
     color: var(--text-main);
-    overflow: hidden; /* Evita doble barra de scroll */
+    overflow: hidden; /* IMPORTANTE: Evita scroll en el cuerpo, solo en el viewer */
 }
 
-/* CONTENEDOR PRINCIPAL (Flexbox Vertical) */
 .app-container {
     display: flex;
     flex-direction: column;
@@ -79,10 +77,10 @@ button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; tr
 .btn-primary:hover { background: var(--primary-hover); }
 .btn-icon { background: transparent; font-size: 1.2rem; padding: 5px; }
 
-/* ZONA DE LECTURA (CENTRO - SCROLLABLE) */
+/* VISUALIZADOR (SCROLL) */
 #viewer {
     flex: 1;
-    overflow-y: auto; /* SCROLL AQUÍ */
+    overflow-y: auto; /* SCROLL SOLO AQUÍ */
     padding: 2rem;
     width: 100%;
     scroll-behavior: smooth;
@@ -95,9 +93,8 @@ button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; tr
     line-height: 1.8;
 }
 
-/* Bloques de texto (Chunks) */
 .sentence {
-    display: block;
+    display: block; /* Bloques separados */
     margin-bottom: 1.5rem;
     padding: 1rem;
     border-radius: 8px;
@@ -137,5 +134,4 @@ button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; tr
 @media (max-width: 768px) {
     .player-bar { flex-direction: column; gap: 1rem; }
     header { padding: 0.5rem 1rem; flex-direction: column; gap: 0.5rem;}
-    .top-controls { flex-wrap: wrap; justify-content: center; }
 }
