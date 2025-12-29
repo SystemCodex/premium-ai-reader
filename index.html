@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Reader Premium</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
@@ -13,41 +14,40 @@
 <body>
     <div class="app-container">
         <header>
-            <h1>📚 AI Reader Premium</h1>
+            <h1>AI Reader Premium</h1>
             
             <div class="top-controls">
                 <div class="voice-control-group">
                     <select id="voice-select" class="voice-select">
                         <option value="" disabled selected>Cargando voces...</option>
                     </select>
-                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escucha gratuita">🔊</button>
+                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escuchar voz (Gratis)">🔊</button>
                 </div>
 
                 <input type="file" id="pdf-upload" accept=".pdf" hidden>
                 <button onclick="document.getElementById('pdf-upload').click()" class="btn-primary">📂 Subir PDF</button>
-                <button id="theme-toggle" class="btn-icon">🌙</button>
+                <button id="theme-toggle" class="btn-icon" style="display:none;">🌙</button>
             </div>
         </header>
 
         <main id="viewer">
             <div id="text-content" class="placeholder-text">
-                Sube un archivo PDF para comenzar la lectura optimizada...
+                Sube un archivo PDF para comenzar la experiencia de lectura...
             </div>
         </main>
 
         <footer class="player-bar">
             <div class="progress-info">
-                Bloque: <span id="current-index">0</span> / <span id="total-sentences">0</span>
+                BLOQUE: <span id="current-index">0</span> / <span id="total-sentences">0</span>
             </div>
             
             <div class="main-buttons">
                 <button id="btn-prev" class="btn-control">⏮</button>
-                <button id="btn-play" class="btn-play">▶ Reproducir</button>
+                <button id="btn-play" class="btn-play">REPRODUCIR</button>
                 <button id="btn-next" class="btn-control">⏭</button>
             </div>
             
             <div class="settings">
-                <label for="speed-select">Velocidad:</label>
                 <select id="speed-select">
                     <option value="1">1.0x</option>
                     <option value="1.25">1.25x</option>
