@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Premium Reader</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Premium Reader</h1>
+            <div class="top-controls">
+                <input type="file" id="pdf-upload" accept=".pdf" hidden>
+                <button onclick="document.getElementById('pdf-upload').click()">Subir PDF</button>
+                <button id="theme-toggle">🌙</button>
+            </div>
+        </header>
+
+        <main id="viewer">
+            <div id="text-content">El libro aparecerá aquí...</div>
+        </main>
+
+        <footer class="player-bar">
+            <div class="progress-info">
+                Oración: <span id="current-index">0</span> / <span id="total-sentences">0</span>
+            </div>
+            <div class="main-buttons">
+                <button id="btn-prev">⏮</button>
+                <button id="btn-play" class="play-main">Reproducir</button>
+                <button id="btn-next">⏭</button>
+            </div>
+            <div class="settings">
+                <select id="speed-select">
+                    <option value="1">1.0x</option>
+                    <option value="1.5">1.5x</option>
+                </select>
+            </div>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
