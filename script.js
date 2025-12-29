@@ -10,11 +10,10 @@ const audioPlayer = new Audio();
 const previewPlayer = new Audio();
 
 // 2. CONFIGURACIÓN (CLAVE SK OFICIAL)
-// Esta es la clave que me pasaste (empieza con sk_)
 const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
 
 const MAX_CHUNK_SIZE = 1000; // Tamaño de bloque para ahorrar
-let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Voz inicial (Rachel)
+let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Voz inicial por defecto (Rachel)
 let audioCache = {}; // Memoria para no gastar créditos doble
 let availableVoices = [];
 
@@ -26,7 +25,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function loadVoices() {
     const select = document.getElementById('voice-select');
     try {
-        // Conexión a API OFICIAL
+        // Conexión a API OFICIAL para obtener lista de voces
         const response = await fetch('https://api.elevenlabs.io/v1/voices', {
             method: 'GET',
             headers: { 'xi-api-key': ELEVEN_API_KEY }
@@ -38,20 +37,26 @@ async function loadVoices() {
         availableVoices = data.voices;
         select.innerHTML = ''; 
 
-        // Llenar selector
+        // Llenar selector con las voces disponibles
         availableVoices.forEach(voice => {
             const option = document.createElement('option');
-            option.value = voice.voice_id;
+            option.value = voice.voice_id; // El valor es el ID único de la voz
             option.textContent = voice.name;
             if (voice.voice_id === currentVoiceId) option.selected = true;
             select.appendChild(option);
         });
 
-        // Cambio de voz
+        // --- AQUÍ ESTÁ LA MAGIA DE LA SELECCIÓN ---
+        // Cuando el usuario cambia la opción en el menú:
         select.addEventListener('change', (e) => {
+            // 1. Actualizamos la variable global con el nuevo ID
             currentVoiceId = e.target.value;
-            clearCache(); // Limpiar caché de audios viejos
+            
+            // 2. Limpiamos la memoria para que no use audios viejos con la voz anterior
+            clearCache(); 
+            
             console.log("Voz cambiada a:", e.target.options[e.target.selectedIndex].text);
+            console.log("Nuevo ID activo:", currentVoiceId);
         });
 
     } catch (error) {
@@ -98,7 +103,6 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
                 fullText += content.items.map(item => item.str).join(" ") + " ";
             }
 
-            // Algoritmo de agrupación inteligente
             let rawSentences = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
             textChunks = [];
             let currentBuffer = "";
@@ -155,14 +159,15 @@ async function playCurrentChunk() {
 
     try {
         let audioUrl;
+        // La clave de caché ahora incluye el ID de la voz actual
+        // Esto asegura que si cambias de voz, no use un audio viejo guardado
         const cacheKey = `${currentChunkIndex}-${currentVoiceId}`;
 
-        // VERIFICAR MEMORIA (Ahorro)
         if (audioCache[cacheKey]) {
             console.log("💰 Usando memoria (Gratis)");
             audioUrl = audioCache[cacheKey];
         } else {
-            console.log(`📡 Generando bloque ${currentChunkIndex + 1}...`);
+            console.log(`📡 Generando bloque con voz ${currentVoiceId}...`);
             audioUrl = await fetchAudioOfficial(textChunks[currentChunkIndex]);
             audioCache[cacheKey] = audioUrl;
         }
@@ -184,12 +189,13 @@ async function playCurrentChunk() {
         console.error("Error:", error);
         isPlaying = false;
         updatePlayButton();
-        alert("Error: " + error.message);
+        alert("Error de API: " + error.message);
     }
 }
 
 // CONEXIÓN OFICIAL (TEXT-TO-SPEECH)
 async function fetchAudioOfficial(textToRead) {
+    // AQUÍ SE USA LA VARIABLE 'currentVoiceId' QUE CAMBIA CON EL SELECTOR
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
         method: 'POST',
         headers: {
@@ -198,15 +204,14 @@ async function fetchAudioOfficial(textToRead) {
         },
         body: JSON.stringify({
             text: textToRead,
-            // AQUÍ ESTÁ LA CORRECCIÓN SEGÚN TU DOCUMENTACIÓN:
-            model_id: "eleven_multilingual_v2", // Antes v1 (de pago), ahora v2 (gratis y mejor)
+            // MODELO ACTUALIZADO Y GRATUITO
+            model_id: "eleven_multilingual_v2", 
             voice_settings: { stability: 0.5, similarity_boost: 0.75 }
         })
     });
 
     if (!response.ok) {
         const err = await response.json();
-        // Manejo específico si se acaban los créditos
         if (err.detail && err.detail.status === "quota_exceeded") {
             throw new Error("Se acabaron tus créditos gratuitos del mes.");
         }
