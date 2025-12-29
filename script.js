@@ -1,18 +1,18 @@
 // ==========================================
-// AI READER PRO - SPLIT VIEW SYNC
+// AI READER - OBSIDIAN EDITION (GOLD)
 // ==========================================
 
-let textChunks = []; // Array de objetos: { text: "...", page: 1 }
+let textChunks = []; 
 let currentChunkIndex = 0;
 let isPlaying = false;
-let pdfDoc = null; // Guardamos el documento PDF globalmente
+let pdfDoc = null; 
 
 const audioPlayer = new Audio();
 audioPlayer.crossOrigin = "anonymous"; 
 const previewPlayer = new Audio();
 
 const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
-const MAX_CHUNK_SIZE = 800; // Un poco menos para mayor precisión de página
+const MAX_CHUNK_SIZE = 800; // Ajustado para precisión de página
 
 let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; 
 let audioCache = {}; 
@@ -26,8 +26,6 @@ let audioContext, analyser, canvas, ctx, particles = [];
 window.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
     initParticleSystem();
-    
-    // Auto-Save no se ejecuta hasta cargar PDF para evitar errores de sync
 });
 
 async function loadVoices() {
@@ -60,30 +58,28 @@ function clearCache() {
     document.getElementById('btn-download-all').style.display = 'none';
 }
 
-// 2. CARGA INTELIGENTE DEL PDF (Mapeo Texto -> Página)
+// 2. CARGA PDF & SYNC
 document.getElementById('pdf-upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    document.getElementById('text-content').innerHTML = "⏳ Escaneando y Sincronizando...";
+    document.getElementById('text-content').innerHTML = "⏳ Analizando estructura del documento...";
     
     const reader = new FileReader();
     reader.onload = async function() {
         try {
             const typedarray = new Uint8Array(this.result);
-            pdfDoc = await pdfjsLib.getDocument(typedarray).promise; // Guardar Global
+            pdfDoc = await pdfjsLib.getDocument(typedarray).promise; 
             
-            textChunks = []; // Reiniciar
+            textChunks = [];
             let totalChars = 0;
 
-            // Recorremos página por página para saber de dónde viene el texto
             for (let i = 1; i <= pdfDoc.numPages; i++) {
                 const page = await pdfDoc.getPage(i);
                 const content = await page.getTextContent();
                 const pageText = content.items.map(item => item.str).join(" ") + " ";
                 totalChars += pageText.length;
 
-                // Chunking por página
                 let rawSentences = pageText.match(/[^.!?]+[.!?]+/g) || [pageText];
                 let currentBuffer = "";
 
@@ -95,7 +91,6 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
                         currentBuffer += sentence + " ";
                     } else {
                         if (currentBuffer.length > 0) {
-                            // AQUÍ ESTÁ LA MAGIA: Guardamos texto Y número de página
                             textChunks.push({ text: currentBuffer.trim(), page: i });
                         }
                         currentBuffer = sentence + " ";
@@ -111,9 +106,8 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
             document.getElementById('total-sentences').innerText = textChunks.length;
             
             currentChunkIndex = 0;
+            localStorage.setItem('lastChunkIndex', 0);
             renderText();
-            
-            // Renderizar la primera página del PDF en el visor derecho
             renderPdfPage(1);
 
         } catch (error) {
@@ -124,22 +118,20 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
     reader.readAsArrayBuffer(file);
 });
 
-// Renderizar lista de texto (Izquierda)
 function renderText() {
     const container = document.getElementById('text-content');
     container.innerHTML = textChunks.map((chunk, i) => 
         `<div id="chunk-${i}" class="sentence" onclick="jumpTo(${i})">
-            <span style="opacity:0.5; font-size:0.8em">[Pg ${chunk.page}]</span> ${chunk.text}
-            <a id="download-${i}" class="download-link" style="display:none">⬇️ Guardar</a>
+            <span style="opacity:0.4; font-size:0.7em; color:var(--gold-primary)">PÁG ${chunk.page}</span><br>
+            ${chunk.text}
+            <br><a id="download-${i}" class="download-link" style="display:none">⬇️ Guardar</a>
         </div>`
     ).join("");
 }
 
-// Renderizar PDF Visual (Derecha)
 let currentRenderedPage = 0;
 async function renderPdfPage(pageNum) {
-    if(!pdfDoc || pageNum === currentRenderedPage) return; // Evitar re-render si es la misma pág
-    
+    if(!pdfDoc || pageNum === currentRenderedPage) return;
     currentRenderedPage = pageNum;
     document.getElementById('pdf-page-num').innerText = pageNum;
 
@@ -147,8 +139,8 @@ async function renderPdfPage(pageNum) {
     const canvas = document.getElementById('the-pdf-canvas');
     const ctx = canvas.getContext('2d');
     
-    // Ajustar escala para que quepa en el contenedor
-    const containerWidth = document.getElementById('pdf-canvas-container').clientWidth - 40;
+    // Escala dinámica para ajustar al panel
+    const containerWidth = document.getElementById('pdf-canvas-container').clientWidth - 60;
     const viewport = page.getViewport({ scale: 1 });
     const scale = containerWidth / viewport.width;
     const scaledViewport = page.getViewport({ scale: scale });
@@ -156,14 +148,10 @@ async function renderPdfPage(pageNum) {
     canvas.height = scaledViewport.height;
     canvas.width = scaledViewport.width;
 
-    const renderContext = {
-        canvasContext: ctx,
-        viewport: scaledViewport
-    };
-    await page.render(renderContext).promise;
+    await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
 }
 
-// 3. REPRODUCIR Y SINCRONIZAR
+// 3. REPRODUCIR
 async function playCurrentChunk() {
     if (!audioContext) setupAudioContext();
 
@@ -173,14 +161,14 @@ async function playCurrentChunk() {
         return;
     }
 
-    // 1. Resaltar Texto (Izquierda)
     highlightChunk(currentChunkIndex);
-    
-    // 2. SINCRONIZAR PDF (Derecha) - Cambiar página si es necesario
     const chunkData = textChunks[currentChunkIndex];
+    
+    // Sincronizar PDF derecha
     renderPdfPage(chunkData.page);
 
     document.getElementById('current-index').innerText = currentChunkIndex + 1;
+    localStorage.setItem('lastChunkIndex', currentChunkIndex);
 
     const btn = document.getElementById('btn-play');
     btn.innerText = "CARGANDO...";
@@ -192,7 +180,6 @@ async function playCurrentChunk() {
         if (audioCache[cacheKey]) {
             audioUrl = audioCache[cacheKey];
         } else {
-            // Usamos chunkData.text porque ahora es un objeto
             const blob = await fetchAudioOfficial(chunkData.text);
             blobCache[cacheKey] = blob;
             audioUrl = URL.createObjectURL(blob);
@@ -242,11 +229,7 @@ async function fetchAudioOfficial(textToRead) {
     return await response.blob();
 }
 
-// ... (El resto de funciones: Download All, Visualizador de partículas) ...
-// (Copiar el código de partículas y descarga unificada del script anterior aquí, son iguales)
-// Solo asegurate de usar chunkData.text en los loops si usas textChunks
-
-// Descarga Unificada (Ajustada a objetos)
+// Descarga Completa
 document.getElementById('btn-download-all').addEventListener('click', () => {
     const blobsToMerge = [];
     for(let i = 0; i < textChunks.length; i++) {
@@ -257,28 +240,29 @@ document.getElementById('btn-download-all').addEventListener('click', () => {
     const mergedBlob = new Blob(blobsToMerge, { type: 'audio/mpeg' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(mergedBlob);
-    a.download = `Libro_Completo.mp3`;
+    a.download = `Audiolibro_Completo.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 });
 
-// SISTEMA DE PARTÍCULAS (Mismo de antes)
+// PARTÍCULAS DORADAS
 class Particle {
-    constructor() {
-        this.reset();
-    }
+    constructor() { this.reset(); }
     reset() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2;
-        this.speedX = Math.random() * 0.5 - 0.25;
-        this.speedY = Math.random() * 0.5 - 0.25;
-        this.color = `rgba(56, 189, 248, ${Math.random() * 0.3})`;
+        this.size = Math.random() * 2.5;
+        this.speedX = Math.random() * 0.4 - 0.2;
+        this.speedY = Math.random() * 0.4 - 0.2;
+        // COLOR DORADO / AMBAR
+        this.color = `rgba(251, 191, 36, ${Math.random() * 0.2 + 0.05})`;
     }
     update(intensity) {
-        this.x += this.speedX * (1 + intensity * 2);
-        this.y += this.speedY * (1 + intensity * 2);
+        this.x += this.speedX * (1 + intensity * 3);
+        this.y += this.speedY * (1 + intensity * 3);
+        if(intensity > 0.1) this.size = Math.random() * 4 + intensity * 5;
+        
         if(this.x > canvas.width || this.x < 0) this.reset();
         if(this.y > canvas.height || this.y < 0) this.reset();
     }
@@ -286,16 +270,21 @@ class Particle {
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
         ctx.fill();
+        ctx.shadowBlur = 0;
     }
 }
+
 function initParticleSystem() {
     canvas = document.getElementById('bg-visualizer');
     ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    for(let i=0; i<100; i++) particles.push(new Particle());
+    for(let i=0; i<80; i++) particles.push(new Particle());
     animateParticles();
 }
+
 function animateParticles() {
     requestAnimationFrame(animateParticles);
     ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -303,7 +292,8 @@ function animateParticles() {
     if(isPlaying && analyser) {
         const arr = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(arr);
-        intensity = arr[10] / 255;
+        let sum = 0; for(let i=0; i<arr.length; i++) sum += arr[i];
+        intensity = (sum / arr.length) / 255;
     }
     particles.forEach(p => { p.update(intensity); p.draw(); });
 }
@@ -329,12 +319,13 @@ function updatePlayButton() {
     const btn = document.getElementById('btn-play');
     if(isPlaying) {
         btn.innerText = "PAUSA";
-        btn.style.backgroundColor = "#fff";
-        btn.style.color = "#000";
+        btn.style.background = "transparent";
+        btn.style.color = "#fbbf24";
+        btn.style.border = "1px solid #fbbf24";
     } else {
         btn.innerText = "INICIAR";
-        btn.style.backgroundColor = ""; 
-        btn.style.color = "";
+        btn.style.background = "#fbbf24"; 
+        btn.style.color = "#000";
     }
 }
 function setupAudioContext() {
@@ -346,18 +337,12 @@ function setupAudioContext() {
     analyser.fftSize = 64;
 }
 
-// Botones básicos
+// Listeners
 document.getElementById('btn-play').addEventListener('click', () => {
-    if (textChunks.length === 0) return alert("Sube un PDF");
+    if (textChunks.length === 0) return alert("Sube un PDF primero");
     if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-    
-    if (isPlaying) {
-        isPlaying = false; audioPlayer.pause();
-    } else {
-        isPlaying = true;
-        if(audioPlayer.paused && audioPlayer.src) audioPlayer.play();
-        else playCurrentChunk();
-    }
+    if (isPlaying) { isPlaying = false; audioPlayer.pause(); } 
+    else { isPlaying = true; if(audioPlayer.paused && audioPlayer.src) audioPlayer.play(); else playCurrentChunk(); }
     updatePlayButton();
 });
 document.getElementById('btn-next').addEventListener('click', () => { currentChunkIndex++; if(isPlaying) playCurrentChunk(); });
