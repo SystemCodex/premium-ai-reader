@@ -1,95 +1,95 @@
 // ==========================================
-// LÓGICA DEL LECTOR (VERSIÓN NAVEGADOR)
+// AI READER PRO - LÓGICA COMPLETA
 // ==========================================
 
-// 1. VARIABLES DE ESTADO
 let textChunks = [];
 let currentChunkIndex = 0;
 let isPlaying = false;
 const audioPlayer = new Audio();
+// Permitir que el canvas lea el audio
+audioPlayer.crossOrigin = "anonymous"; 
 const previewPlayer = new Audio();
 
-// 2. CONFIGURACIÓN (CLAVE SK OFICIAL)
+// --- CONFIGURACIÓN ---
 const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
+const MAX_CHUNK_SIZE = 1000; 
 
-const MAX_CHUNK_SIZE = 1000; // Tamaño de bloque para ahorrar
-let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Voz inicial por defecto (Rachel)
-let audioCache = {}; // Memoria para no gastar créditos doble
+let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; 
+let audioCache = {}; // Cache de URLs
+let blobCache = {};  // Cache de Archivos físicos (para descarga)
 let availableVoices = [];
 
-// 3. INICIALIZAR: CARGAR VOCES AL ABRIR
+// VARIABLES DEL VISUALIZADOR
+let audioContext;
+let analyser;
+let source;
+let canvas, ctx;
+let animationId;
+
+// 1. INICIALIZACIÓN
 window.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
+    initVisualizer(); // Preparar canvas
+    
+    // Auto-Save: Recuperar índice
+    const savedIndex = localStorage.getItem('lastChunkIndex');
+    if(savedIndex) console.log("Progreso previo detectado:", savedIndex);
 });
 
 async function loadVoices() {
     const select = document.getElementById('voice-select');
     try {
-        // Conexión a API OFICIAL para obtener lista de voces
         const response = await fetch('https://api.elevenlabs.io/v1/voices', {
             method: 'GET',
             headers: { 'xi-api-key': ELEVEN_API_KEY }
         });
         
-        if(!response.ok) throw new Error("Fallo de autenticación");
-        
+        if(!response.ok) throw new Error("API Key inválida");
         const data = await response.json();
         availableVoices = data.voices;
         select.innerHTML = ''; 
 
-        // Llenar selector con las voces disponibles
         availableVoices.forEach(voice => {
             const option = document.createElement('option');
-            option.value = voice.voice_id; // El valor es el ID único de la voz
+            option.value = voice.voice_id;
             option.textContent = voice.name;
             if (voice.voice_id === currentVoiceId) option.selected = true;
             select.appendChild(option);
         });
 
-        // --- AQUÍ ESTÁ LA MAGIA DE LA SELECCIÓN ---
-        // Cuando el usuario cambia la opción en el menú:
         select.addEventListener('change', (e) => {
-            // 1. Actualizamos la variable global con el nuevo ID
             currentVoiceId = e.target.value;
-            
-            // 2. Limpiamos la memoria para que no use audios viejos con la voz anterior
             clearCache(); 
-            
-            console.log("Voz cambiada a:", e.target.options[e.target.selectedIndex].text);
-            console.log("Nuevo ID activo:", currentVoiceId);
         });
-
     } catch (error) {
         console.error(error);
-        select.innerHTML = '<option>❌ Clave Incorrecta</option>';
+        select.innerHTML = '<option>Error de conexión</option>';
     }
 }
 
-// 4. PRE-ESCUCHA GRATUITA
 document.getElementById('btn-preview-voice').addEventListener('click', () => {
     const selectedId = document.getElementById('voice-select').value;
     const voiceData = availableVoices.find(v => v.voice_id === selectedId);
-
-    if (voiceData && voiceData.preview_url) {
+    if (voiceData?.preview_url) {
         previewPlayer.src = voiceData.preview_url;
         previewPlayer.play();
     } else {
-        alert("Esta voz no tiene vista previa.");
+        alert("Sin vista previa.");
     }
 });
 
 function clearCache() {
     audioCache = {};
-    console.log("Memoria limpiada.");
+    blobCache = {};
+    document.getElementById('btn-download-all').style.display = 'none';
 }
 
-// 5. CARGAR PDF Y AGRUPAR (Chunking)
+// 2. CARGA PDF
 document.getElementById('pdf-upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    document.getElementById('text-content').innerHTML = "⏳ Analizando documento...";
-    
+    document.getElementById('text-content').innerHTML = "⏳ Procesando para lectura confortable...";
     const reader = new FileReader();
     reader.onload = async function() {
         try {
@@ -103,6 +103,12 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
                 fullText += content.items.map(item => item.str).join(" ") + " ";
             }
 
+            // Contador de caracteres
+            const totalChars = fullText.length;
+            document.getElementById('char-count').innerText = totalChars.toLocaleString();
+            document.getElementById('quota-info').style.display = "inline-block";
+
+            // Chunking
             let rawSentences = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
             textChunks = [];
             let currentBuffer = "";
@@ -110,7 +116,6 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
             for (let sentence of rawSentences) {
                 sentence = sentence.trim();
                 if(!sentence) continue;
-
                 if ((currentBuffer.length + sentence.length) < MAX_CHUNK_SIZE) {
                     currentBuffer += sentence + " ";
                 } else {
@@ -121,67 +126,86 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
             if (currentBuffer.length > 0) textChunks.push(currentBuffer.trim());
 
             document.getElementById('total-sentences').innerText = textChunks.length;
+            
+            // Reiniciar progreso
             currentChunkIndex = 0;
+            localStorage.setItem('lastChunkIndex', 0);
+
             renderText();
             clearCache();
-
+            
         } catch (error) {
             console.error(error);
-            alert("Error al leer el PDF (Quizás está protegido o es una imagen).");
+            alert("Error al leer PDF.");
         }
     };
     reader.readAsArrayBuffer(file);
 });
 
-// 6. RENDERIZAR EN PANTALLA
 function renderText() {
     const container = document.getElementById('text-content');
     container.innerHTML = textChunks.map((chunk, i) => 
         `<div id="chunk-${i}" class="sentence" onclick="jumpTo(${i})">
             ${chunk}
+            <a id="download-${i}" class="download-link" style="display:none">⬇️ Guardar Bloque</a>
         </div>`
     ).join("");
 }
 
-// 7. REPRODUCCIÓN PRINCIPAL
+// 3. REPRODUCIR
 async function playCurrentChunk() {
+    // Iniciar contexto de audio para el visualizador si no existe
+    if (!audioContext) setupAudioContext();
+
     if (currentChunkIndex >= textChunks.length) {
         isPlaying = false;
         updatePlayButton();
+        cancelAnimationFrame(animationId);
+        drawIdleVisualizer();
         return;
     }
 
     highlightChunk(currentChunkIndex);
     document.getElementById('current-index').innerText = currentChunkIndex + 1;
-    
+    localStorage.setItem('lastChunkIndex', currentChunkIndex); // Auto-Save
+
     const btn = document.getElementById('btn-play');
-    btn.innerText = "Cargando...";
+    btn.innerText = "CARGANDO...";
 
     try {
         let audioUrl;
-        // La clave de caché ahora incluye el ID de la voz actual
-        // Esto asegura que si cambias de voz, no use un audio viejo guardado
         const cacheKey = `${currentChunkIndex}-${currentVoiceId}`;
 
         if (audioCache[cacheKey]) {
-            console.log("💰 Usando memoria (Gratis)");
             audioUrl = audioCache[cacheKey];
         } else {
-            console.log(`📡 Generando bloque con voz ${currentVoiceId}...`);
-            audioUrl = await fetchAudioOfficial(textChunks[currentChunkIndex]);
+            const blob = await fetchAudioOfficial(textChunks[currentChunkIndex]);
+            blobCache[cacheKey] = blob;
+            audioUrl = URL.createObjectURL(blob);
             audioCache[cacheKey] = audioUrl;
         }
         
+        enableDownloadLink(currentChunkIndex, audioUrl);
+        if(Object.keys(blobCache).length > 0) {
+            document.getElementById('btn-download-all').style.display = 'inline-block';
+        }
+
         audioPlayer.src = audioUrl;
         audioPlayer.playbackRate = parseFloat(document.getElementById('speed-select').value);
         
         await audioPlayer.play();
-        btn.innerText = "⏸ Pausa";
+        btn.innerText = "PAUSA";
+        
+        // Arrancar visualizador
+        visualize();
 
         audioPlayer.onended = () => {
             if (isPlaying) {
                 currentChunkIndex++;
                 playCurrentChunk();
+            } else {
+                cancelAnimationFrame(animationId);
+                drawIdleVisualizer();
             }
         };
 
@@ -189,13 +213,11 @@ async function playCurrentChunk() {
         console.error("Error:", error);
         isPlaying = false;
         updatePlayButton();
-        alert("Error de API: " + error.message);
+        alert("Error: " + error.message);
     }
 }
 
-// CONEXIÓN OFICIAL (TEXT-TO-SPEECH)
 async function fetchAudioOfficial(textToRead) {
-    // AQUÍ SE USA LA VARIABLE 'currentVoiceId' QUE CAMBIA CON EL SELECTOR
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
         method: 'POST',
         headers: {
@@ -204,25 +226,126 @@ async function fetchAudioOfficial(textToRead) {
         },
         body: JSON.stringify({
             text: textToRead,
-            // MODELO ACTUALIZADO Y GRATUITO
-            model_id: "eleven_multilingual_v2", 
+            model_id: "eleven_multilingual_v2",
             voice_settings: { stability: 0.5, similarity_boost: 0.75 }
         })
     });
 
     if (!response.ok) {
         const err = await response.json();
-        if (err.detail && err.detail.status === "quota_exceeded") {
-            throw new Error("Se acabaron tus créditos gratuitos del mes.");
-        }
-        throw new Error(err.detail?.message || "Error desconocido");
+        if (err.detail && err.detail.status === "quota_exceeded") throw new Error("Sin créditos.");
+        throw new Error(err.detail?.message || "Error");
     }
-
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
+    return await response.blob();
 }
 
-// --- UTILIDADES VISUALES ---
+// 4. DESCARGA UNIFICADA
+document.getElementById('btn-download-all').addEventListener('click', () => {
+    const blobsToMerge = [];
+    for(let i = 0; i < textChunks.length; i++) {
+        const key = `${i}-${currentVoiceId}`;
+        if(blobCache[key]) blobsToMerge.push(blobCache[key]);
+    }
+    if(blobsToMerge.length === 0) return alert("Nada para descargar aún.");
+
+    const mergedBlob = new Blob(blobsToMerge, { type: 'audio/mpeg' });
+    const mergedUrl = URL.createObjectURL(mergedBlob);
+    const a = document.createElement('a');
+    a.href = mergedUrl;
+    a.download = `Audiolibro_Completo.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+});
+
+// ==========================================
+// 5. VISUALIZADOR DE AUDIO (CANVAS)
+// ==========================================
+function initVisualizer() {
+    canvas = document.getElementById('audio-visualizer');
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    drawIdleVisualizer();
+}
+
+function resizeCanvas() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+}
+
+function setupAudioContext() {
+    // Crear contexto (requiere gesto de usuario previo, que es el click en play)
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    source = audioContext.createMediaElementSource(audioPlayer);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+    analyser.fftSize = 256;
+}
+
+function visualize() {
+    if (!analyser) return;
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const centerY = canvas.height / 2;
+
+    function renderFrame() {
+        if (!isPlaying) return;
+        animationId = requestAnimationFrame(renderFrame);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Línea de onda
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#38bdf8'; // Color Accent
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = (v * (canvas.height / 3.5)) + (centerY - 25); // Posicionar
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+
+            x += sliceWidth;
+        }
+        
+        ctx.lineTo(canvas.width, centerY);
+        ctx.stroke();
+
+        // Partículas (reaccionan a bajos)
+        const bass = dataArray[5]; 
+        if (bass > 140) { // Umbral de bajos
+            ctx.beginPath();
+            const pX = Math.random() * canvas.width;
+            const pY = centerY + (Math.random() * 40 - 20);
+            const size = Math.random() * 3;
+            ctx.arc(pX, pY, size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(56, 189, 248, ${Math.random() * 0.8})`;
+            ctx.fill();
+        }
+    }
+    renderFrame();
+}
+
+function drawIdleVisualizer() {
+    if(!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.strokeStyle = '#334155'; // Línea recta gris
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+// HELPERS UI
 function highlightChunk(index) {
     document.querySelectorAll('.sentence').forEach(el => el.classList.remove('active'));
     const el = document.getElementById(`chunk-${index}`);
@@ -232,20 +355,49 @@ function highlightChunk(index) {
     }
 }
 
-function updatePlayButton() {
-    const btn = document.getElementById('btn-play');
-    btn.innerText = isPlaying ? "⏸ Pausa" : "▶ Reproducir";
+function enableDownloadLink(index, url) {
+    const link = document.getElementById(`download-${index}`);
+    if(link) {
+        link.href = url;
+        link.download = `bloque_${index}.mp3`;
+        link.style.display = "inline-block";
+    }
 }
 
+function updatePlayButton() {
+    const btn = document.getElementById('btn-play');
+    if(isPlaying) {
+        btn.innerText = "PAUSA";
+        btn.style.backgroundColor = "#e2e8f0";
+        btn.style.color = "#0f172a";
+    } else {
+        btn.innerText = "REPRODUCIR";
+        btn.style.backgroundColor = "#38bdf8";
+    }
+}
+
+// LISTENERS
 document.getElementById('btn-play').addEventListener('click', () => {
-    if (textChunks.length === 0) return alert("Sube un PDF primero");
+    if (textChunks.length === 0) return alert("Sube un PDF");
+    
+    // Reactivar AudioContext si estaba suspendido (política de navegadores)
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+
     if (isPlaying) {
         isPlaying = false;
         audioPlayer.pause();
+        cancelAnimationFrame(animationId);
+        drawIdleVisualizer();
     } else {
         isPlaying = true;
-        if (audioPlayer.paused && audioPlayer.src) audioPlayer.play();
-        else playCurrentChunk();
+        if (audioPlayer.paused && audioPlayer.src) {
+            audioPlayer.play();
+            visualize();
+        } else {
+            playCurrentChunk();
+        }
     }
     updatePlayButton();
 });
@@ -270,7 +422,3 @@ window.jumpTo = (index) => {
     playCurrentChunk();
     updatePlayButton();
 };
-
-document.getElementById('theme-toggle').addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-});
