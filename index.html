@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
-        // Configurar el worker de PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     </script>
 </head>
@@ -15,7 +14,15 @@
     <div class="app-container">
         <header>
             <h1>📚 AI Reader Premium</h1>
+            
             <div class="top-controls">
+                <div class="voice-control-group">
+                    <select id="voice-select" class="voice-select">
+                        <option value="" disabled selected>Cargando voces...</option>
+                    </select>
+                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escucha gratuita">🔊</button>
+                </div>
+
                 <input type="file" id="pdf-upload" accept=".pdf" hidden>
                 <button onclick="document.getElementById('pdf-upload').click()" class="btn-primary">📂 Subir PDF</button>
                 <button id="theme-toggle" class="btn-icon">🌙</button>
@@ -24,13 +31,13 @@
 
         <main id="viewer">
             <div id="text-content" class="placeholder-text">
-                Sube un archivo PDF para comenzar la lectura...
+                Sube un archivo PDF para comenzar la lectura optimizada...
             </div>
         </main>
 
         <footer class="player-bar">
             <div class="progress-info">
-                Oración: <span id="current-index">0</span> / <span id="total-sentences">0</span>
+                Bloque: <span id="current-index">0</span> / <span id="total-sentences">0</span>
             </div>
             
             <div class="main-buttons">
@@ -45,7 +52,6 @@
                     <option value="1">1.0x</option>
                     <option value="1.25">1.25x</option>
                     <option value="1.5">1.5x</option>
-                    <option value="2">2.0x</option>
                 </select>
             </div>
         </footer>
