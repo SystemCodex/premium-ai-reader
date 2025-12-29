@@ -1,17 +1,20 @@
-// VARIABLES DE ESTADO
+// ==========================================
+// CONFIGURACIÓN RAPIDAPI (ELEVENLABS)
+// ==========================================
+const RAPIDAPI_KEY = "93e18ea0d0msh899294d3fce8356p15e3fcjsn60d8f3c9acf1"; // Tu clave
+const RAPIDAPI_HOST = "elevenlabs-api1.p.rapidapi.com";
+
+// Variables de Estado
 let textChunks = [];
 let currentChunkIndex = 0;
 let isPlaying = false;
 const audioPlayer = new Audio();
 const previewPlayer = new Audio();
 
-// --- CONFIGURACIÓN DE USUARIO ---
-const ELEVEN_API_KEY = "93e18ea0d0msh899294d3fce8356p15e3fcjsn60d8f3c9acf1"; // <--- ¡PEGA TU CLAVE AQUÍ!
-const MAX_CHUNK_SIZE = 1000; // Caracteres por bloque (Ahorro)
-
-// VARIABLES GLOBALES
-let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // ID por defecto (Rachel)
-let audioCache = {}; // Memoria para no pagar doble
+// Configuración de Lectura
+const MAX_CHUNK_SIZE = 1000; // Caracteres por bloque
+let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Voz por defecto (Rachel)
+let audioCache = {}; // Memoria Caché
 let availableVoices = [];
 
 // 1. INICIALIZAR: CARGAR VOCES AL ABRIR
@@ -19,14 +22,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
 });
 
+// Función adaptada para pedir las voces a RapidAPI
 async function loadVoices() {
     const select = document.getElementById('voice-select');
     try {
-        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
-            headers: { 'xi-api-key': ELEVEN_API_KEY }
+        const response = await fetch(`https://${RAPIDAPI_HOST}/v1/voices`, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': RAPIDAPI_KEY,
+                'x-rapidapi-host': RAPIDAPI_HOST
+            }
         });
         
-        if(!response.ok) throw new Error("Error API Key");
+        if(!response.ok) throw new Error("Error conectando con RapidAPI");
         
         const data = await response.json();
         availableVoices = data.voices;
@@ -40,16 +48,15 @@ async function loadVoices() {
             select.appendChild(option);
         });
 
-        // Evento al cambiar voz
         select.addEventListener('change', (e) => {
             currentVoiceId = e.target.value;
-            clearCache(); // Limpiar memoria porque cambió la voz
+            clearCache();
             console.log("Voz cambiada a:", e.target.options[e.target.selectedIndex].text);
         });
 
     } catch (error) {
         console.error(error);
-        select.innerHTML = '<option>Verifica tu API Key</option>';
+        select.innerHTML = '<option>Error cargando voces</option>';
     }
 }
 
@@ -59,7 +66,6 @@ document.getElementById('btn-preview-voice').addEventListener('click', () => {
     const voiceData = availableVoices.find(v => v.voice_id === selectedId);
 
     if (voiceData && voiceData.preview_url) {
-        console.log("🔊 Muestra gratis:", voiceData.name);
         previewPlayer.src = voiceData.preview_url;
         previewPlayer.play();
     } else {
@@ -69,15 +75,14 @@ document.getElementById('btn-preview-voice').addEventListener('click', () => {
 
 function clearCache() {
     audioCache = {};
-    console.log("🧹 Caché limpiado.");
 }
 
-// 3. CARGAR PDF Y AGRUPAR TEXTO (CHUNKING)
+// 3. CARGAR PDF Y AGRUPAR TEXTO
 document.getElementById('pdf-upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    document.getElementById('text-content').innerHTML = "⏳ Procesando PDF y optimizando bloques...";
+    document.getElementById('text-content').innerHTML = "⏳ Procesando PDF vía RapidAPI...";
     
     const reader = new FileReader();
     reader.onload = async function() {
@@ -92,7 +97,7 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
                 fullText += content.items.map(item => item.str).join(" ") + " ";
             }
 
-            // Lógica de Agrupación (Chunks grandes para ahorrar)
+            // Agrupación de texto (Chunks)
             let rawSentences = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
             textChunks = [];
             let currentBuffer = "";
@@ -113,7 +118,7 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
             document.getElementById('total-sentences').innerText = textChunks.length;
             currentChunkIndex = 0;
             renderText();
-            clearCache(); // Nueva lectura = Nueva caché necesaria
+            clearCache();
 
         } catch (error) {
             console.error(error);
@@ -133,7 +138,7 @@ function renderText() {
     ).join("");
 }
 
-// 5. REPRODUCIR CON INTELIGENCIA (CACHÉ + API)
+// 5. REPRODUCIR (Lógica Principal)
 async function playCurrentChunk() {
     if (currentChunkIndex >= textChunks.length) {
         isPlaying = false;
@@ -145,26 +150,24 @@ async function playCurrentChunk() {
     document.getElementById('current-index').innerText = currentChunkIndex + 1;
     
     const btn = document.getElementById('btn-play');
-    btn.innerText = "Cargando...";
+    btn.innerText = "Cargando audio...";
 
     try {
         let audioUrl;
-        // Clave única para guardar en memoria: Índice + ID de Voz
         const cacheKey = `${currentChunkIndex}-${currentVoiceId}`;
 
         if (audioCache[cacheKey]) {
-            console.log("💰 AHORRO: Usando audio de memoria.");
+            console.log("💰 Usando Caché (RapidAPI)");
             audioUrl = audioCache[cacheKey];
         } else {
-            console.log(`📡 GASTO: Generando bloque ${currentChunkIndex + 1}...`);
-            audioUrl = await fetchAudioFromAPI(textChunks[currentChunkIndex]);
-            audioCache[cacheKey] = audioUrl; // Guardar para el futuro
+            console.log(`📡 Solicitando a RapidAPI bloque ${currentChunkIndex + 1}...`);
+            audioUrl = await fetchAudioFromRapidAPI(textChunks[currentChunkIndex]);
+            audioCache[cacheKey] = audioUrl;
         }
         
         audioPlayer.src = audioUrl;
         audioPlayer.playbackRate = parseFloat(document.getElementById('speed-select').value);
         
-        // Manejar promesa de play para evitar errores
         await audioPlayer.play();
         btn.innerText = "⏸ Pausa";
 
@@ -183,13 +186,19 @@ async function playCurrentChunk() {
     }
 }
 
-// LLAMADA API DIRECTA
-async function fetchAudioFromAPI(textToRead) {
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
+// ==========================================
+// FUNCIÓN CRÍTICA: CONEXIÓN CON RAPIDAPI
+// ==========================================
+async function fetchAudioFromRapidAPI(textToRead) {
+    // Nota: Cambiamos 'sound-generation' por 'text-to-speech' que es lo correcto para leer
+    const url = `https://${RAPIDAPI_HOST}/v1/text-to-speech/${currentVoiceId}`;
+    
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
-            'xi-api-key': ELEVEN_API_KEY,
-            'Content-Type': 'application/json'
+            'content-type': 'application/json',
+            'x-rapidapi-host': RAPIDAPI_HOST,
+            'x-rapidapi-key': RAPIDAPI_KEY
         },
         body: JSON.stringify({
             text: textToRead,
@@ -200,14 +209,14 @@ async function fetchAudioFromAPI(textToRead) {
 
     if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.detail?.message || "Error desconocido de API");
+        throw new Error(err.message || "Error en RapidAPI");
     }
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 }
 
-// --- UTILIDADES VISUALES ---
+// --- UTILIDADES ---
 function highlightChunk(index) {
     document.querySelectorAll('.sentence').forEach(el => el.classList.remove('active'));
     const el = document.getElementById(`chunk-${index}`);
@@ -222,20 +231,15 @@ function updatePlayButton() {
     btn.innerText = isPlaying ? "⏸ Pausa" : "▶ Reproducir";
 }
 
-// EVENT LISTENERS DE BOTONES
 document.getElementById('btn-play').addEventListener('click', () => {
     if (textChunks.length === 0) return alert("Sube un PDF primero");
-    
     if (isPlaying) {
         isPlaying = false;
         audioPlayer.pause();
     } else {
         isPlaying = true;
-        if (audioPlayer.paused && audioPlayer.src) {
-            audioPlayer.play();
-        } else {
-            playCurrentChunk();
-        }
+        if (audioPlayer.paused && audioPlayer.src) audioPlayer.play();
+        else playCurrentChunk();
     }
     updatePlayButton();
 });
