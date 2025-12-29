@@ -1,5 +1,5 @@
 // ==========================================
-// LÓGICA DEL LECTOR (API OFICIAL + MODELO V2)
+// LÓGICA DEL LECTOR (VERSIÓN NAVEGADOR)
 // ==========================================
 
 // 1. VARIABLES DE ESTADO
@@ -10,7 +10,7 @@ const audioPlayer = new Audio();
 const previewPlayer = new Audio();
 
 // 2. CONFIGURACIÓN (CLAVE SK OFICIAL)
-// Asegúrate de que esta sea tu clave "sk_..." correcta
+// Esta es la clave que me pasaste (empieza con sk_)
 const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
 
 const MAX_CHUNK_SIZE = 1000; // Tamaño de bloque para ahorrar
@@ -27,7 +27,7 @@ async function loadVoices() {
     const select = document.getElementById('voice-select');
     try {
         // Conexión a API OFICIAL
-        const response = await fetch('https://api.elevenlabs.io/v2/voices', {
+        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
             method: 'GET',
             headers: { 'xi-api-key': ELEVEN_API_KEY }
         });
@@ -57,7 +57,6 @@ async function loadVoices() {
     } catch (error) {
         console.error(error);
         select.innerHTML = '<option>❌ Clave Incorrecta</option>';
-        alert("Error: Tu API Key parece inválida o no tiene permisos.");
     }
 }
 
@@ -185,28 +184,29 @@ async function playCurrentChunk() {
         console.error("Error:", error);
         isPlaying = false;
         updatePlayButton();
-        alert("Error de API: " + error.message);
+        alert("Error: " + error.message);
     }
 }
 
 // CONEXIÓN OFICIAL (TEXT-TO-SPEECH)
 async function fetchAudioOfficial(textToRead) {
-    const response = await fetch(`https://api.elevenlabs.io/v2/text-to-speech/${currentVoiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
         method: 'POST',
         headers: {
-            'xi-api-key': ELEVEN_API_KEY, // Header oficial
+            'xi-api-key': ELEVEN_API_KEY,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             text: textToRead,
-            // CAMBIO IMPORTANTE: Usamos el modelo V2 Multilingüe que sí es gratis
-            model_id: "eleven_multilingual_v2", 
+            // AQUÍ ESTÁ LA CORRECCIÓN SEGÚN TU DOCUMENTACIÓN:
+            model_id: "eleven_multilingual_v2", // Antes v1 (de pago), ahora v2 (gratis y mejor)
             voice_settings: { stability: 0.5, similarity_boost: 0.75 }
         })
     });
 
     if (!response.ok) {
         const err = await response.json();
+        // Manejo específico si se acaban los créditos
         if (err.detail && err.detail.status === "quota_exceeded") {
             throw new Error("Se acabaron tus créditos gratuitos del mes.");
         }
