@@ -1,5 +1,5 @@
 // ==========================================
-// LÓGICA DEL LECTOR (API OFICIAL)
+// LÓGICA DEL LECTOR (API OFICIAL + MODELO V2)
 // ==========================================
 
 // 1. VARIABLES DE ESTADO
@@ -10,6 +10,7 @@ const audioPlayer = new Audio();
 const previewPlayer = new Audio();
 
 // 2. CONFIGURACIÓN (CLAVE SK OFICIAL)
+// Asegúrate de que esta sea tu clave "sk_..." correcta
 const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
 
 const MAX_CHUNK_SIZE = 1000; // Tamaño de bloque para ahorrar
@@ -198,7 +199,8 @@ async function fetchAudioOfficial(textToRead) {
         },
         body: JSON.stringify({
             text: textToRead,
-            model_id: "eleven_monolingual_v1",
+            // CAMBIO IMPORTANTE: Usamos el modelo V2 Multilingüe que sí es gratis
+            model_id: "eleven_multilingual_v2", 
             voice_settings: { stability: 0.5, similarity_boost: 0.75 }
         })
     });
