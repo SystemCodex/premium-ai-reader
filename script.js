@@ -27,7 +27,7 @@ async function loadVoices() {
     const select = document.getElementById('voice-select');
     try {
         // Conexión a API OFICIAL
-        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+        const response = await fetch('https://api.elevenlabs.io/v2/voices', {
             method: 'GET',
             headers: { 'xi-api-key': ELEVEN_API_KEY }
         });
@@ -191,7 +191,7 @@ async function playCurrentChunk() {
 
 // CONEXIÓN OFICIAL (TEXT-TO-SPEECH)
 async function fetchAudioOfficial(textToRead) {
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v2/text-to-speech/${currentVoiceId}`, {
         method: 'POST',
         headers: {
             'xi-api-key': ELEVEN_API_KEY, // Header oficial
