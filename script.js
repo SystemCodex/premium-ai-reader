@@ -1,45 +1,43 @@
 // ==========================================
-// CONFIGURACIÓN RAPIDAPI (ELEVENLABS)
+// LÓGICA DEL LECTOR (API OFICIAL)
 // ==========================================
-const RAPIDAPI_KEY = "93e18ea0d0msh899294d3fce8356p15e3fcjsn60d8f3c9acf1"; // Tu clave
-const RAPIDAPI_HOST = "elevenlabs-api1.p.rapidapi.com";
 
-// Variables de Estado
+// 1. VARIABLES DE ESTADO
 let textChunks = [];
 let currentChunkIndex = 0;
 let isPlaying = false;
 const audioPlayer = new Audio();
 const previewPlayer = new Audio();
 
-// Configuración de Lectura
-const MAX_CHUNK_SIZE = 1000; // Caracteres por bloque
-let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Voz por defecto (Rachel)
-let audioCache = {}; // Memoria Caché
+// 2. CONFIGURACIÓN (CLAVE SK OFICIAL)
+const ELEVEN_API_KEY = "sk_ed46d0e013173c119ba69a8024a7f1d7c84c031d7b65d5e1"; 
+
+const MAX_CHUNK_SIZE = 1000; // Tamaño de bloque para ahorrar
+let currentVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Voz inicial (Rachel)
+let audioCache = {}; // Memoria para no gastar créditos doble
 let availableVoices = [];
 
-// 1. INICIALIZAR: CARGAR VOCES AL ABRIR
+// 3. INICIALIZAR: CARGAR VOCES AL ABRIR
 window.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
 });
 
-// Función adaptada para pedir las voces a RapidAPI
 async function loadVoices() {
     const select = document.getElementById('voice-select');
     try {
-        const response = await fetch(`https://${RAPIDAPI_HOST}/v1/voices`, {
+        // Conexión a API OFICIAL
+        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
             method: 'GET',
-            headers: {
-                'x-rapidapi-key': RAPIDAPI_KEY,
-                'x-rapidapi-host': RAPIDAPI_HOST
-            }
+            headers: { 'xi-api-key': ELEVEN_API_KEY }
         });
         
-        if(!response.ok) throw new Error("Error conectando con RapidAPI");
+        if(!response.ok) throw new Error("Fallo de autenticación");
         
         const data = await response.json();
         availableVoices = data.voices;
         select.innerHTML = ''; 
 
+        // Llenar selector
         availableVoices.forEach(voice => {
             const option = document.createElement('option');
             option.value = voice.voice_id;
@@ -48,19 +46,21 @@ async function loadVoices() {
             select.appendChild(option);
         });
 
+        // Cambio de voz
         select.addEventListener('change', (e) => {
             currentVoiceId = e.target.value;
-            clearCache();
+            clearCache(); // Limpiar caché de audios viejos
             console.log("Voz cambiada a:", e.target.options[e.target.selectedIndex].text);
         });
 
     } catch (error) {
         console.error(error);
-        select.innerHTML = '<option>Error cargando voces</option>';
+        select.innerHTML = '<option>❌ Clave Incorrecta</option>';
+        alert("Error: Tu API Key parece inválida o no tiene permisos.");
     }
 }
 
-// 2. PRE-ESCUCHA GRATUITA
+// 4. PRE-ESCUCHA GRATUITA
 document.getElementById('btn-preview-voice').addEventListener('click', () => {
     const selectedId = document.getElementById('voice-select').value;
     const voiceData = availableVoices.find(v => v.voice_id === selectedId);
@@ -69,20 +69,21 @@ document.getElementById('btn-preview-voice').addEventListener('click', () => {
         previewPlayer.src = voiceData.preview_url;
         previewPlayer.play();
     } else {
-        alert("Sin vista previa disponible.");
+        alert("Esta voz no tiene vista previa.");
     }
 });
 
 function clearCache() {
     audioCache = {};
+    console.log("Memoria limpiada.");
 }
 
-// 3. CARGAR PDF Y AGRUPAR TEXTO
+// 5. CARGAR PDF Y AGRUPAR (Chunking)
 document.getElementById('pdf-upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    document.getElementById('text-content').innerHTML = "⏳ Procesando PDF vía RapidAPI...";
+    document.getElementById('text-content').innerHTML = "⏳ Analizando documento...";
     
     const reader = new FileReader();
     reader.onload = async function() {
@@ -97,7 +98,7 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
                 fullText += content.items.map(item => item.str).join(" ") + " ";
             }
 
-            // Agrupación de texto (Chunks)
+            // Algoritmo de agrupación inteligente
             let rawSentences = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
             textChunks = [];
             let currentBuffer = "";
@@ -122,13 +123,13 @@ document.getElementById('pdf-upload').addEventListener('change', async (e) => {
 
         } catch (error) {
             console.error(error);
-            alert("Error al leer el PDF.");
+            alert("Error al leer el PDF (Quizás está protegido o es una imagen).");
         }
     };
     reader.readAsArrayBuffer(file);
 });
 
-// 4. MOSTRAR EN PANTALLA
+// 6. RENDERIZAR EN PANTALLA
 function renderText() {
     const container = document.getElementById('text-content');
     container.innerHTML = textChunks.map((chunk, i) => 
@@ -138,7 +139,7 @@ function renderText() {
     ).join("");
 }
 
-// 5. REPRODUCIR (Lógica Principal)
+// 7. REPRODUCCIÓN PRINCIPAL
 async function playCurrentChunk() {
     if (currentChunkIndex >= textChunks.length) {
         isPlaying = false;
@@ -150,18 +151,19 @@ async function playCurrentChunk() {
     document.getElementById('current-index').innerText = currentChunkIndex + 1;
     
     const btn = document.getElementById('btn-play');
-    btn.innerText = "Cargando audio...";
+    btn.innerText = "Cargando...";
 
     try {
         let audioUrl;
         const cacheKey = `${currentChunkIndex}-${currentVoiceId}`;
 
+        // VERIFICAR MEMORIA (Ahorro)
         if (audioCache[cacheKey]) {
-            console.log("💰 Usando Caché (RapidAPI)");
+            console.log("💰 Usando memoria (Gratis)");
             audioUrl = audioCache[cacheKey];
         } else {
-            console.log(`📡 Solicitando a RapidAPI bloque ${currentChunkIndex + 1}...`);
-            audioUrl = await fetchAudioFromRapidAPI(textChunks[currentChunkIndex]);
+            console.log(`📡 Generando bloque ${currentChunkIndex + 1}...`);
+            audioUrl = await fetchAudioOfficial(textChunks[currentChunkIndex]);
             audioCache[cacheKey] = audioUrl;
         }
         
@@ -179,26 +181,20 @@ async function playCurrentChunk() {
         };
 
     } catch (error) {
-        console.error("Error reproducción:", error);
+        console.error("Error:", error);
         isPlaying = false;
         updatePlayButton();
-        alert("Error: " + error.message);
+        alert("Error de API: " + error.message);
     }
 }
 
-// ==========================================
-// FUNCIÓN CRÍTICA: CONEXIÓN CON RAPIDAPI
-// ==========================================
-async function fetchAudioFromRapidAPI(textToRead) {
-    // Nota: Cambiamos 'sound-generation' por 'text-to-speech' que es lo correcto para leer
-    const url = `https://${RAPIDAPI_HOST}/v1/text-to-speech/${currentVoiceId}`;
-    
-    const response = await fetch(url, {
+// CONEXIÓN OFICIAL (TEXT-TO-SPEECH)
+async function fetchAudioOfficial(textToRead) {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
         method: 'POST',
         headers: {
-            'content-type': 'application/json',
-            'x-rapidapi-host': RAPIDAPI_HOST,
-            'x-rapidapi-key': RAPIDAPI_KEY
+            'xi-api-key': ELEVEN_API_KEY, // Header oficial
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             text: textToRead,
@@ -209,14 +205,17 @@ async function fetchAudioFromRapidAPI(textToRead) {
 
     if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.message || "Error en RapidAPI");
+        if (err.detail && err.detail.status === "quota_exceeded") {
+            throw new Error("Se acabaron tus créditos gratuitos del mes.");
+        }
+        throw new Error(err.detail?.message || "Error desconocido");
     }
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 }
 
-// --- UTILIDADES ---
+// --- UTILIDADES VISUALES ---
 function highlightChunk(index) {
     document.querySelectorAll('.sentence').forEach(el => el.classList.remove('active'));
     const el = document.getElementById(`chunk-${index}`);
