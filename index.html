@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Reader Pro - Lectura Confortable</title>
+    <title>AI Reader Pro - Split View</title>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -12,6 +12,8 @@
     </script>
 </head>
 <body>
+    <canvas id="bg-visualizer"></canvas>
+
     <div class="app-container">
         <header>
             <div class="header-left">
@@ -26,7 +28,7 @@
                     <select id="voice-select" class="voice-select">
                         <option value="" disabled selected>Cargando voces...</option>
                     </select>
-                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escuchar voz">🔊</button>
+                    <button id="btn-preview-voice" class="btn-icon" title="Pre-escuchar">🔊</button>
                 </div>
 
                 <input type="file" id="pdf-upload" accept=".pdf" hidden>
@@ -34,14 +36,24 @@
             </div>
         </header>
 
-        <canvas id="audio-visualizer"></canvas>
+        <div class="split-view">
+            <section class="panel text-panel">
+                <div class="panel-header">LECTURA IA</div>
+                <div id="viewer">
+                    <div id="text-content" class="placeholder-text">
+                        <p>Sube un PDF para activar la consola.</p>
+                        <p class="sub-text">El texto aparecerá aquí.</p>
+                    </div>
+                </div>
+            </section>
 
-        <main id="viewer">
-            <div id="text-content" class="placeholder-text">
-                <p>Bienvenido al modo de lectura confortable.</p>
-                <p class="sub-text">Sube un PDF para comenzar. Tu progreso se guardará automáticamente.</p>
-            </div>
-        </main>
+            <section class="panel pdf-panel">
+                <div class="panel-header">VISTA ORIGINAL - PÁGINA <span id="pdf-page-num">--</span></div>
+                <div id="pdf-canvas-container">
+                    <canvas id="the-pdf-canvas"></canvas>
+                </div>
+            </section>
+        </div>
 
         <footer class="player-bar">
             <div class="progress-info">
@@ -50,13 +62,13 @@
             
             <div class="main-buttons">
                 <button id="btn-prev" class="btn-control">⏮</button>
-                <button id="btn-play" class="btn-play">REPRODUCIR</button>
+                <button id="btn-play" class="btn-play">INICIAR</button>
                 <button id="btn-next" class="btn-control">⏭</button>
             </div>
             
             <div class="settings">
                 <button id="btn-download-all" class="btn-download-all" style="display: none;">
-                    ⬇️ MP3 COMPLETO
+                    ⬇️ MP3
                 </button>
                 
                 <select id="speed-select">
